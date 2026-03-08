@@ -209,6 +209,106 @@ CREATE TABLE IF NOT EXISTS db_metadata (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+-- ============================================================================
+-- Architecture Reference Patterns
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS architecture_patterns (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  domain TEXT NOT NULL,
+  description TEXT NOT NULL,
+  components TEXT NOT NULL,          -- JSON array of component names
+  trust_boundaries TEXT NOT NULL,    -- JSON array of trust boundary descriptions
+  applicable_standards TEXT NOT NULL, -- JSON array of standard IDs
+  threat_mitigations TEXT NOT NULL,  -- JSON array of {threat, mitigation} objects
+  guidance TEXT NOT NULL,
+  diagram_ascii TEXT                 -- Optional ASCII diagram
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS architecture_patterns_fts USING fts5(
+  id, name, domain, description, components, guidance,
+  content='architecture_patterns',
+  content_rowid='rowid'
+);
+
+CREATE TRIGGER IF NOT EXISTS architecture_patterns_ai AFTER INSERT ON architecture_patterns BEGIN
+  INSERT INTO architecture_patterns_fts(rowid, id, name, domain, description, components, guidance)
+  VALUES (new.rowid, new.id, new.name, new.domain, new.description, new.components, new.guidance);
+END;
+
+-- ============================================================================
+-- Attack Pattern Library
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS attack_patterns (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  target_component TEXT NOT NULL,
+  attack_vector TEXT NOT NULL,
+  stride_category TEXT NOT NULL,     -- S, T, R, I, D, E or combinations
+  feasibility TEXT NOT NULL,         -- JSON per ISO 21434 Annex G
+  impact TEXT NOT NULL,
+  known_mitigations TEXT NOT NULL,   -- JSON array
+  r155_annex5_refs TEXT,             -- JSON array of Annex 5 threat IDs
+  description TEXT NOT NULL,
+  prerequisites TEXT,                -- JSON array of required conditions
+  detection_methods TEXT             -- JSON array
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS attack_patterns_fts USING fts5(
+  id, name, target_component, attack_vector, description,
+  content='attack_patterns',
+  content_rowid='rowid'
+);
+
+CREATE TRIGGER IF NOT EXISTS attack_patterns_ai AFTER INSERT ON attack_patterns BEGIN
+  INSERT INTO attack_patterns_fts(rowid, id, name, target_component, attack_vector, description)
+  VALUES (new.rowid, new.id, new.name, new.target_component, new.attack_vector, new.description);
+END;
+
+-- ============================================================================
+-- TARA Worked Examples
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS tara_examples (
+  id TEXT PRIMARY KEY,
+  system_name TEXT NOT NULL,
+  item_definition TEXT NOT NULL,
+  assets TEXT NOT NULL,              -- JSON array
+  threat_scenarios TEXT NOT NULL,    -- JSON array
+  damage_scenarios TEXT NOT NULL,    -- JSON array
+  risk_determinations TEXT NOT NULL, -- JSON array
+  cybersecurity_goals TEXT NOT NULL, -- JSON array
+  applicable_standards TEXT NOT NULL -- JSON array of standard IDs
+);
+
+-- ============================================================================
+-- CSMS Operational Obligations
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS csms_obligations (
+  id TEXT PRIMARY KEY,
+  lifecycle_phase TEXT NOT NULL,
+  obligation TEXT NOT NULL,
+  source_regulation TEXT NOT NULL,
+  source_ref TEXT NOT NULL,
+  reporting_timeline TEXT,
+  evidence_required TEXT NOT NULL,   -- JSON array
+  guidance TEXT NOT NULL
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS csms_obligations_fts USING fts5(
+  id, lifecycle_phase, obligation, guidance,
+  content='csms_obligations',
+  content_rowid='rowid'
+);
+
+CREATE TRIGGER IF NOT EXISTS csms_obligations_ai AFTER INSERT ON csms_obligations BEGIN
+  INSERT INTO csms_obligations_fts(rowid, id, lifecycle_phase, obligation, guidance)
+  VALUES (new.rowid, new.id, new.lifecycle_phase, new.obligation, new.guidance);
+END;
 `;
 
 /**
