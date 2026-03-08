@@ -683,6 +683,50 @@ function loadTaraExamples(db: Database.Database): void {
   console.log(`✓ Loaded ${result.count} TARA examples`);
 }
 
+/**
+ * Load CSMS operational obligations from seed JSON file
+ */
+function loadCsmsObligations(db: Database.Database): void {
+  const seedPath = join(SEED_DIR, 'csms-obligations.json');
+
+  if (!existsSync(seedPath)) {
+    console.log('⚠ No csms-obligations.json found, skipping...');
+    return;
+  }
+
+  const data = JSON.parse(readFileSync(seedPath, 'utf-8'));
+
+  const insertObligation = db.prepare(`
+    INSERT INTO csms_obligations (id, lifecycle_phase, obligation, source_regulation, source_ref, reporting_timeline, evidence_required, guidance)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const loadAll = db.transaction(() => {
+    let count = 0;
+
+    if (data.obligations) {
+      for (const o of data.obligations) {
+        insertObligation.run(
+          o.id,
+          o.lifecycle_phase,
+          o.obligation,
+          o.source_regulation,
+          o.source_ref,
+          o.reporting_timeline || null,
+          JSON.stringify(o.evidence_required),
+          o.guidance
+        );
+        count++;
+      }
+    }
+
+    return { count };
+  });
+
+  const result = loadAll();
+  console.log(`✓ Loaded ${result.count} CSMS obligations`);
+}
+
 function buildDatabase() {
   console.log('Building automotive cybersecurity database...');
 
@@ -723,6 +767,7 @@ function buildDatabase() {
     loadArchitecturePatterns(db);
     loadAttackPatterns(db);
     loadTaraExamples(db);
+    loadCsmsObligations(db);
 
     // Insert db_metadata
     const pkgPath = join(__dirname, '..', 'package.json');

@@ -1,0 +1,474 @@
+{
+  "obligations": [
+    {
+      "id": "csms-dev-tara-maintenance",
+      "lifecycle_phase": "development",
+      "obligation": "Maintain threat analysis and risk assessment (TARA) throughout development",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(b)",
+      "reporting_timeline": null,
+      "evidence_required": ["TARA document per ISO 21434 clause 15", "Risk treatment decision records", "TARA review meeting minutes", "Change log showing iterative updates"],
+      "guidance": "The TARA must be a living document that evolves as the vehicle architecture matures during development. Start with an initial TARA at concept phase based on the item definition and preliminary architecture. Revisit the analysis at each design milestone: after component selection, after interface definition, after integration, and before design freeze. Each iteration must re-evaluate attack feasibility ratings because new components or interfaces may introduce previously unconsidered attack paths. Document every change with rationale so auditors can trace the evolution of risk decisions. Use a structured format aligned with ISO 21434 clause 15, covering asset identification, threat enumeration (referencing R155 Annex 5 Part A), damage scenario assessment, attack feasibility rating, and risk determination. The output feeds directly into cybersecurity goals and requirements. Auditors expect to see version-controlled TARA documents with clear traceability from threats to implemented controls. A static, one-time TARA created only at project start is a common audit finding."
+    },
+    {
+      "id": "csms-dev-security-requirements",
+      "lifecycle_phase": "development",
+      "obligation": "Derive cybersecurity requirements from TARA and allocate them to components",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(c)",
+      "reporting_timeline": null,
+      "evidence_required": ["Cybersecurity requirements specification", "Requirements traceability matrix", "Component allocation records", "Cybersecurity goals document"],
+      "guidance": "Every risk rated as requiring treatment in the TARA must produce one or more cybersecurity requirements. These requirements must be specific, testable, and allocated to identifiable system components. Avoid vague requirements like 'the system shall be secure' — instead specify 'the TCU shall authenticate all diagnostic requests using ISO 14229 Security Access (0x27) with CAL-3 compliant key management.' Maintain a traceability matrix that links each threat scenario to cybersecurity goals, goals to requirements, and requirements to the implementing component and its verification method. ISO 21434 clause 8 requires that cybersecurity requirements address the cybersecurity goals derived from the TARA. Auditors will check that no TARA-identified risk is left without a corresponding requirement, and that each requirement has a defined verification method (test, analysis, review, or simulation). Common failures include missing requirements for post-production monitoring and incident response capabilities."
+    },
+    {
+      "id": "csms-dev-security-testing",
+      "lifecycle_phase": "development",
+      "obligation": "Perform cybersecurity verification and validation testing before release",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(e)",
+      "reporting_timeline": null,
+      "evidence_required": ["Cybersecurity test plan", "Penetration test reports", "Fuzz testing results", "Vulnerability scan reports", "Test completion summary"],
+      "guidance": "Cybersecurity testing must go beyond functional testing to include adversarial testing methods. R155 paragraph 7.2.2.2(e) requires processes for testing cybersecurity of a vehicle type. This encompasses several testing layers: static analysis of source code and firmware, dynamic analysis including fuzz testing of communication interfaces (CAN, Ethernet, Bluetooth, cellular), penetration testing of external-facing attack surfaces, and integration testing of security controls across trust boundaries. Testing must cover all mitigations identified in the TARA. Penetration testing should follow a structured methodology — define scope, enumerate attack surface, attempt exploitation of identified threats, and document findings with severity ratings. Fuzz testing is expected for all message-parsing interfaces: diagnostic protocols (UDS/ISO 14229), OTA update mechanisms, and V2X communication stacks. Test reports must demonstrate that each cybersecurity requirement was verified, state the pass/fail result, and describe any residual risk. Auditors expect to see both automated scanning results and manual expert analysis."
+    },
+    {
+      "id": "csms-dev-secure-design",
+      "lifecycle_phase": "development",
+      "obligation": "Apply secure-by-design principles including defense in depth and least privilege",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(a)",
+      "reporting_timeline": null,
+      "evidence_required": ["Security architecture document", "Defense-in-depth analysis", "Trust boundary diagrams", "Design review records"],
+      "guidance": "The CSMS must embed secure design principles into the development process, not treat security as a bolt-on validation activity. R155 paragraph 7.2.2.2(a) requires processes within the organization to manage cybersecurity — this starts with architecture-level security decisions. Define trust boundaries between all components and external interfaces. Apply defense in depth: if an attacker compromises the infotainment head unit, the gateway ECU must still prevent unauthorized access to safety-critical domains. Apply least privilege: each ECU should have access only to the CAN messages and services it needs. Document these architectural decisions and the threat scenarios they address. Use hardware security modules (HSMs) for cryptographic key storage where feasible. Separate safety-critical and non-safety-critical functions with hardware or hypervisor-based isolation. Auditors evaluate whether the architecture systematically reduces attack surface rather than relying on perimeter defenses alone."
+    },
+    {
+      "id": "csms-dev-vulnerability-tracking",
+      "lifecycle_phase": "development",
+      "obligation": "Track known vulnerabilities in third-party and open-source components during development",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(b)",
+      "reporting_timeline": null,
+      "evidence_required": ["Software bill of materials (SBOM)", "Vulnerability tracking register", "CVE assessment records", "Dependency audit reports"],
+      "guidance": "Maintain a complete software bill of materials (SBOM) for every software component integrated into the vehicle, including open-source libraries, third-party middleware, operating system components, and firmware. Map each component to known CVE databases (NVD, vendor advisories) and assess applicability. Not every CVE in a library affects the vehicle — document the analysis that determines whether a vulnerability is exploitable given the specific integration context. Track vulnerability status through development: newly discovered CVEs must be evaluated against the current design, and the TARA updated if the risk profile changes. Use automated dependency scanning tools integrated into the CI/CD pipeline. Before design freeze, produce a vulnerability assessment report listing all known vulnerabilities, their applicability determination, and planned mitigations. Post-release, this SBOM becomes the foundation for ongoing field vulnerability monitoring under R155 paragraph 7.2.2.2(g)."
+    },
+    {
+      "id": "csms-dev-security-coding",
+      "lifecycle_phase": "development",
+      "obligation": "Enforce secure coding standards and code review processes for security-relevant software",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(a)",
+      "reporting_timeline": null,
+      "evidence_required": ["Secure coding standard document", "Static analysis tool configuration and reports", "Code review records for security-critical components", "Developer security training records"],
+      "guidance": "The CSMS must define and enforce secure coding practices for all software that implements cybersecurity controls or handles security-sensitive data. Adopt an automotive-appropriate coding standard such as MISRA C/C++ with security-focused extensions, or CERT C for components where MISRA is not applicable. Configure static analysis tools (e.g., Polyspace, Coverity, or equivalent) to detect common vulnerability classes: buffer overflows, integer overflows, use-after-free, format string vulnerabilities, and injection flaws. Run static analysis as part of the continuous integration pipeline, not only before release. Mandate peer code review for all security-critical components — gateway firewalls, authentication modules, cryptographic implementations, and secure boot chains. Reviewers must have security competence and check for logic errors that automated tools miss. Maintain records of coding standard deviations with justification and risk acceptance. Auditors verify that the coding standard exists, is enforced through tooling, and that deviations are formally managed."
+    },
+    {
+      "id": "csms-dev-config-management",
+      "lifecycle_phase": "development",
+      "obligation": "Manage cybersecurity configuration and ensure integrity of security-relevant build artifacts",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(d)",
+      "reporting_timeline": null,
+      "evidence_required": ["Configuration management plan", "Build integrity verification records", "Signing key management procedures", "Release artifact checksums"],
+      "guidance": "Cybersecurity configuration management ensures that what is tested is what is deployed. R155 paragraph 7.2.2.2(d) requires processes to verify that identified risks are appropriately managed — this includes ensuring security controls are not accidentally removed or misconfigured between testing and production. Maintain version-controlled repositories for all security-relevant source code and configuration. Implement reproducible builds so any release artifact can be recreated from source. Sign firmware images and software packages with keys stored in HSMs. Verify signatures at every handover point: from development to testing, from testing to production, and from production to field deployment. Track security-relevant configuration parameters (enabled/disabled features, cryptographic algorithm selections, certificate stores) as managed configuration items. Any change to security configuration must go through the change management process with cybersecurity impact assessment. Auditors check that you can demonstrate artifact integrity from source commit to deployed firmware."
+    },
+    {
+      "id": "csms-dev-risk-assessment-current",
+      "lifecycle_phase": "development",
+      "obligation": "Ensure the risk assessment accounts for the latest known threats before release approval",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(f)",
+      "reporting_timeline": null,
+      "evidence_required": ["Pre-release TARA review record", "Threat intelligence assessment", "Risk acceptance sign-off", "Updated TARA document"],
+      "guidance": "R155 paragraph 7.2.2.2(f) requires processes for ensuring that the risk assessment is kept current. Before any vehicle type approval submission, the TARA must be reviewed against the latest threat intelligence. Vehicle development cycles span years — threats that did not exist at concept phase may be well-documented by the time of release. Review automotive threat intelligence sources: AUTO-ISAC advisories, upstream supplier vulnerability notifications, published CVEs in components used, and academic research on automotive attack techniques. Update attack feasibility ratings where new tools or techniques have lowered exploitation barriers. If the updated risk assessment reveals unmitigated high-risk threats, the release approval must be withheld until adequate mitigations are implemented or a formal risk acceptance is documented with executive sign-off. This pre-release review creates the baseline for post-production monitoring — the manufacturer must know exactly what risks were accepted at release."
+    },
+    {
+      "id": "csms-prod-secure-provisioning",
+      "lifecycle_phase": "production",
+      "obligation": "Implement secure key injection and cryptographic provisioning on the production line",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.1(b)",
+      "reporting_timeline": null,
+      "evidence_required": ["Key injection procedure documentation", "Key management system architecture", "Production HSM certification", "Key ceremony records"],
+      "guidance": "Production is where cryptographic identity is established for each vehicle and ECU. The CSMS must define secure processes for injecting cryptographic keys, certificates, and unique identifiers during manufacturing. Use hardware security modules (HSMs) on the production line to generate and inject keys — keys must never exist in plaintext outside of HSM boundaries. Implement key diversification so that compromise of one vehicle's keys does not affect others. Document the key hierarchy: root CA, intermediate CAs, per-vehicle certificates, per-ECU symmetric keys. Define key ceremony procedures for root key generation with multi-person authorization and auditable logging. Establish secure channels between the key management system and production equipment. Verify successful key injection through end-of-line testing — confirm that secure boot validates correctly, that TLS certificates chain to the expected root, and that ECU authentication succeeds. Auditors will examine the key management architecture, HSM certifications (FIPS 140-2/3 or Common Criteria), and production line access controls."
+    },
+    {
+      "id": "csms-prod-firmware-integrity",
+      "lifecycle_phase": "production",
+      "obligation": "Verify firmware and software integrity before and after flashing on the production line",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.1(b)",
+      "reporting_timeline": null,
+      "evidence_required": ["Firmware verification procedure", "End-of-line test specifications", "Checksum validation records", "Production software release authorization"],
+      "guidance": "Every ECU flashed on the production line must receive verified, authorized firmware. The CSMS must define a chain of custody from the development release process to the production flashing station. Before flashing, verify the firmware image signature against the OEM signing certificate. After flashing, read back a hash of the installed firmware and compare against the expected value. Record the exact firmware version, build identifier, and checksum for every ECU in every vehicle — this traceability is required for field vulnerability management and recall scoping. The production system must reject unauthorized or modified firmware images. Implement access controls on the firmware distribution system so that only authorized release managers can promote images to production. Segregate firmware for different vehicle variants and markets to prevent cross-contamination. Maintain audit logs of all firmware flashing operations including operator identity, timestamp, vehicle VIN, and ECU serial number."
+    },
+    {
+      "id": "csms-prod-line-security",
+      "lifecycle_phase": "production",
+      "obligation": "Protect the production network and flashing infrastructure from unauthorized access",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.1(b)",
+      "reporting_timeline": null,
+      "evidence_required": ["Production network architecture diagram", "Access control policy for production systems", "Network segmentation verification", "Physical security assessment"],
+      "guidance": "The production environment is a high-value target — an attacker who compromises the production line can insert malicious firmware into every vehicle built. The CSMS must address production infrastructure security. Segment the production network from the corporate IT network and from the internet. Flashing stations and key injection systems should operate on isolated network segments with strictly controlled access points. Implement multi-factor authentication for all administrative access to production systems. Monitor the production network for anomalous activity — unexpected firmware uploads, unauthorized access attempts, or communication with external addresses. Physically secure the production area with access controls, surveillance, and visitor management. Define and test incident response procedures specific to production compromise scenarios. Regular security assessments of the production infrastructure should verify that network segmentation is effective, access controls are enforced, and monitoring is operational. Document these controls for auditor review."
+    },
+    {
+      "id": "csms-prod-eol-testing",
+      "lifecycle_phase": "production",
+      "obligation": "Perform end-of-line cybersecurity verification testing on manufactured vehicles",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(e)",
+      "reporting_timeline": null,
+      "evidence_required": ["End-of-line cybersecurity test specification", "Test pass/fail records per VIN", "Defect handling procedure for cybersecurity failures", "Test equipment calibration records"],
+      "guidance": "End-of-line (EOL) testing must include cybersecurity verification checks alongside functional and safety tests. At minimum, verify: secure boot activates correctly and rejects modified bootloaders, all ECU certificates are valid and chain to the expected root CA, diagnostic access requires proper authentication (ISO 14229 Security Access), gateway firewall rules block unauthorized CAN message routing, and any tamper detection mechanisms are armed. Define pass/fail criteria for each cybersecurity check. Vehicles that fail cybersecurity EOL tests must be quarantined and routed through a defined defect resolution process — they cannot be released with known cybersecurity defects unless a formal risk acceptance is documented. Maintain per-VIN records of cybersecurity test results for the vehicle's lifetime, as these records support post-production incident investigation and type approval evidence. Calibrate and validate cybersecurity test equipment regularly to ensure test reliability."
+    },
+    {
+      "id": "csms-prod-variant-management",
+      "lifecycle_phase": "production",
+      "obligation": "Manage cybersecurity configurations across vehicle variants and market-specific builds",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(d)",
+      "reporting_timeline": null,
+      "evidence_required": ["Variant configuration matrix", "Market-specific cybersecurity requirements", "Configuration audit records", "Variant validation test results"],
+      "guidance": "Different vehicle variants and market destinations may require different cybersecurity configurations — different enabled communication interfaces, different regulatory requirements (e.g., Chinese GB/T standards vs. European R155), different certificate chains for regional backend services, and different feature sets that affect the attack surface. The CSMS must track which cybersecurity configuration applies to each variant and ensure the production line applies the correct configuration. Maintain a variant configuration matrix that maps vehicle model, market, and option codes to the applicable cybersecurity configuration set. Implement automated validation that cross-checks the flashed configuration against the expected variant specification. Errors in variant management can result in vehicles being deployed with incorrect or missing security controls — a serious compliance issue that may require field campaigns to correct."
+    },
+    {
+      "id": "csms-ops-incident-detection",
+      "lifecycle_phase": "operations",
+      "obligation": "Detect and classify cybersecurity incidents affecting vehicles in the field",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(g)",
+      "reporting_timeline": "72 hours to type approval authority for critical incidents",
+      "evidence_required": ["Incident detection procedures", "CSIRT contact list", "Incident classification criteria", "Escalation matrix"],
+      "guidance": "R155 paragraph 7.2.2.2(g) requires processes to monitor for, detect, and respond to cyberattacks, cyber threats, and vulnerabilities on vehicle types. Establish a Vehicle Security Operations Center (VSOC) or equivalent capability that continuously monitors telemetry from connected vehicles. Define incident classification criteria using a severity scale (e.g., critical, high, medium, low) based on safety impact, number of vehicles affected, and exploitation status. Critical incidents — those affecting safety functions or indicating active exploitation across the fleet — must trigger immediate escalation to the CSIRT lead and notification to the type approval authority within 72 hours. Integrate vehicle telemetry with threat intelligence feeds to detect indicators of compromise. Maintain a 24/7 on-call rotation for critical incident response. Document every detected incident in a case management system with timestamps, classification rationale, and response actions. Auditors expect to see that the detection capability is operational, staffed, and regularly tested through simulation exercises."
+    },
+    {
+      "id": "csms-ops-incident-response",
+      "lifecycle_phase": "operations",
+      "obligation": "Execute structured incident response procedures for confirmed cybersecurity incidents",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(g)",
+      "reporting_timeline": "Initial assessment within 24 hours of detection",
+      "evidence_required": ["Incident response plan", "Response playbooks per incident type", "Post-incident review records", "Communication templates for stakeholders"],
+      "guidance": "Beyond detection, the CSMS must define structured response procedures that move from detection through containment, eradication, recovery, and lessons learned. Create playbooks for common incident types: compromised ECU firmware, unauthorized remote access, data exfiltration from connected vehicles, denial of service on telematics, and supply chain compromise affecting vehicle components. Each playbook must define roles and responsibilities, decision criteria for escalation, communication protocols (internal teams, management, regulators, affected customers), and technical containment actions. For vehicle-specific incidents, define whether and how to issue remote mitigations (e.g., disabling a compromised feature via OTA configuration update) versus requiring dealer intervention. Conduct post-incident reviews within 30 days to identify root causes, assess the effectiveness of the response, and update procedures. Maintain a secure incident log that preserves forensic evidence — this data supports the R155 requirement in paragraph 7.2.2.2(h) to provide data for analysis of attempted or successful cyberattacks."
+    },
+    {
+      "id": "csms-ops-vulnerability-disclosure",
+      "lifecycle_phase": "operations",
+      "obligation": "Operate a coordinated vulnerability disclosure process for external security researchers",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(g)",
+      "reporting_timeline": "Acknowledge receipt within 5 business days",
+      "evidence_required": ["Vulnerability disclosure policy (published)", "Researcher communication templates", "Vulnerability triage procedure", "Bug bounty program terms (if applicable)"],
+      "guidance": "External security researchers are a valuable source of vulnerability information. The CSMS should include a coordinated vulnerability disclosure (CVD) program that provides a clear, published channel for researchers to report vulnerabilities. Publish a security.txt file on the OEM website following RFC 9116. Define the scope of acceptable research, expected response timelines, and legal safe harbor provisions. Acknowledge receipt of vulnerability reports within 5 business days. Triage reported vulnerabilities within 10 business days to determine severity, affected vehicle types, and exploitation potential. Coordinate with the researcher on disclosure timelines — industry standard is 90 days from acknowledgment, but safety-critical vehicle vulnerabilities may require faster remediation or agreed extensions. Track each reported vulnerability through the same process used for internally discovered vulnerabilities. Consider operating a bug bounty program for connected vehicle components to incentivize responsible disclosure. Auditors view an active CVD program as evidence of mature vulnerability management."
+    },
+    {
+      "id": "csms-ops-vulnerability-monitoring",
+      "lifecycle_phase": "operations",
+      "obligation": "Continuously monitor for new vulnerabilities in deployed vehicle software and components",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(g)",
+      "reporting_timeline": null,
+      "evidence_required": ["Vulnerability monitoring procedure", "SBOM for deployed vehicles", "Vulnerability assessment records", "Monitoring tool configuration"],
+      "guidance": "R155 paragraph 7.2.2.2(g) requires assessing whether implemented cybersecurity measures remain effective against new threats and vulnerabilities. This requires continuous monitoring of vulnerability sources against the deployed vehicle SBOM. Subscribe to CVE feeds from NVD, vendor-specific advisories (chip manufacturers, OS vendors, middleware suppliers), and automotive-specific sources (AUTO-ISAC, JAMA/JAPIA advisories). When a new CVE is published for a component in the vehicle SBOM, assess its applicability within 5 business days. Not all CVEs are exploitable in the automotive context — the assessment must consider the specific integration, exposed interfaces, and existing mitigations. Document each assessment with the decision rationale. Track the aggregate vulnerability posture across the fleet, identifying trends and systemic risks. This monitoring must continue for the entire supported lifetime of each vehicle type — typically 10-15 years from end of production, far longer than IT systems."
+    },
+    {
+      "id": "csms-ops-patch-management",
+      "lifecycle_phase": "operations",
+      "obligation": "Develop, test, and deploy cybersecurity patches for field vehicles",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.3",
+      "reporting_timeline": "Critical patches: remediation plan within 30 days",
+      "evidence_required": ["Patch management procedure", "Patch testing records", "Deployment tracking dashboard", "Rollback procedures"],
+      "guidance": "R155 paragraph 7.2.2.3 requires that cyber threats and vulnerabilities requiring a response be mitigated within a reasonable timeframe. This means the manufacturer must have an operational capability to develop, test, and deploy patches to vehicles in the field. Define severity-based timelines: critical vulnerabilities with active exploitation should have a remediation plan within 30 days, high-severity within 90 days, medium within 180 days. Patches must undergo the same cybersecurity testing as original releases — penetration testing, regression testing, and vehicle-level integration testing — but on an accelerated timeline. For vehicles with OTA update capability, define the rollout strategy: staged deployment starting with a test fleet, monitoring for regressions before expanding to the full fleet. For vehicles without OTA capability, coordinate with the dealer network for workshop updates and define customer notification procedures. Track patch deployment rates across the fleet to identify vehicles that remain unpatched. Maintain rollback capability in case a patch introduces functional regressions."
+    },
+    {
+      "id": "csms-ops-csirt-coordination",
+      "lifecycle_phase": "operations",
+      "obligation": "Maintain a Cybersecurity Incident Response Team with defined roles and regular exercises",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(g)",
+      "reporting_timeline": null,
+      "evidence_required": ["CSIRT charter", "Team roster with contact details", "Exercise schedule and results", "Training records"],
+      "guidance": "The CSIRT is the organizational capability that executes incident response. Define the CSIRT charter documenting scope, authority, membership, and escalation paths. The team should include representatives from vehicle cybersecurity engineering, IT security, legal, communications, product management, and executive leadership. Define on-call schedules ensuring 24/7 availability for critical incidents. Conduct tabletop exercises at least quarterly, simulating realistic scenarios: fleet-wide vulnerability discovery, active exploitation of a connected vehicle service, supply chain compromise affecting a Tier-1 supplier, and coordinated disclosure of a safety-critical vulnerability by a researcher. After each exercise, document findings, gaps in procedures, and corrective actions. Conduct at least one full-scale simulation annually that involves actual technical response activities — not just discussion-based exercises. Ensure CSIRT members maintain relevant skills through training on automotive protocols, forensic analysis techniques, and evolving threat landscape. Auditors evaluate whether the CSIRT is a paper organization or an exercised, operational capability."
+    },
+    {
+      "id": "csms-ops-field-monitoring",
+      "lifecycle_phase": "operations",
+      "obligation": "Collect and analyze cybersecurity-relevant telemetry from vehicles in the field",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.4(b)",
+      "reporting_timeline": null,
+      "evidence_required": ["Telemetry collection specification", "Privacy impact assessment", "Data retention policy", "Anomaly detection rule set"],
+      "guidance": "R155 paragraph 7.2.2.4(b) requires the capability to analyze and detect cyber threats, vulnerabilities, and cyberattacks from vehicle data and vehicle logs, while respecting privacy rights. Define which cybersecurity-relevant data points to collect from connected vehicles: authentication failures, secure boot validation results, firewall rule violations, anomalous CAN traffic patterns, OTA update status, and certificate expiry warnings. Minimize personal data collection — focus on security events rather than driving behavior. Conduct a privacy impact assessment (PIA) documenting the lawful basis for telemetry collection, data minimization measures, retention periods, and data subject rights. Implement anomaly detection algorithms that identify deviations from baseline behavior patterns, which may indicate compromise. Set alert thresholds that balance detection sensitivity with false positive rates. Store collected telemetry in a secure, access-controlled environment with retention periods defined by regulatory requirements — typically aligned with the vehicle support period. This telemetry feeds both real-time incident detection and retrospective forensic analysis."
+    },
+    {
+      "id": "csms-ops-regulatory-reporting",
+      "lifecycle_phase": "operations",
+      "obligation": "Report significant cybersecurity incidents and vulnerabilities to the type approval authority",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(g)",
+      "reporting_timeline": "72 hours for critical incidents; annual summary report",
+      "evidence_required": ["Regulatory reporting procedure", "Report templates", "Submission records", "Authority contact register"],
+      "guidance": "The type approval authority that issued the CSMS certificate must be informed of significant cybersecurity events. While R155 does not specify exact timelines, industry practice and authority expectations have converged on 72-hour notification for critical incidents — those affecting vehicle safety, involving active exploitation, or impacting a large number of vehicles. Define the reporting criteria: what constitutes a reportable event, who authorizes the report, and what information must be included. Initial reports should contain: affected vehicle types, estimated number of vehicles impacted, nature of the vulnerability or incident, current exploitation status, and planned remediation timeline. Follow up with detailed technical reports as the investigation progresses. Submit an annual summary report to the approval authority covering all vulnerabilities discovered, incidents detected, patches deployed, and changes to the threat landscape for each approved vehicle type. Maintain records of all regulatory communications. Failure to report can result in CSMS certificate suspension, which would halt new vehicle type approvals."
+    },
+    {
+      "id": "csms-ops-log-retention",
+      "lifecycle_phase": "operations",
+      "obligation": "Retain cybersecurity event logs for forensic analysis and regulatory compliance",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(h)",
+      "reporting_timeline": null,
+      "evidence_required": ["Log retention policy", "Storage architecture documentation", "Access control records for log systems", "Log integrity verification procedures"],
+      "guidance": "R155 paragraph 7.2.2.2(h) requires providing relevant data to support analysis of attempted or successful cyberattacks. This mandates a log retention capability that preserves cybersecurity event data for forensic investigation. Define retention periods based on regulatory requirements, vehicle lifetime, and forensic value — a minimum of 3 years for routine events and 7 years for incident-related logs is common practice. Store logs in tamper-evident or immutable storage to preserve forensic integrity — timestamps must be cryptographically verifiable and log entries must resist unauthorized modification. Implement a centralized log management system that aggregates vehicle telemetry, backend service logs, and VSOC alert data into a searchable repository. Define access controls: only authorized security analysts and incident responders should have log access, with all access itself logged. Establish procedures for log preservation when an incident is detected — freeze relevant logs to prevent routine rotation from destroying evidence. Test log retrieval procedures regularly to confirm that historical data can be accessed and interpreted when needed."
+    },
+    {
+      "id": "csms-ops-threat-intelligence",
+      "lifecycle_phase": "operations",
+      "obligation": "Consume and act on automotive-specific threat intelligence",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(f)",
+      "reporting_timeline": null,
+      "evidence_required": ["Threat intelligence feed subscriptions", "Intelligence assessment records", "ISAC membership documentation", "Threat briefing schedule"],
+      "guidance": "Keeping the risk assessment current (R155 paragraph 7.2.2.2(f)) requires consuming threat intelligence from multiple sources. Subscribe to AUTO-ISAC (or regional equivalent), semiconductor vendor security advisories, operating system vendor bulletins, and academic automotive security research. Designate an analyst responsible for reviewing incoming intelligence and assessing its relevance to deployed vehicle types. When new attack techniques, exploit tools, or vulnerability classes are identified that affect automotive systems, evaluate the impact on each approved vehicle type and update the TARA accordingly. Produce regular threat briefings (monthly or quarterly) for the CSIRT and product security teams, summarizing the evolving landscape and any required actions. Participate in information sharing: contribute anonymized incident data and vulnerability findings to industry groups. The intelligence function should also monitor underground forums and malware repositories for automotive-specific threats, either through in-house capability or a contracted threat intelligence provider."
+    },
+    {
+      "id": "csms-ops-ota-security",
+      "lifecycle_phase": "operations",
+      "obligation": "Ensure integrity and authenticity of over-the-air software updates delivered to vehicles",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(d)",
+      "reporting_timeline": null,
+      "evidence_required": ["OTA update security architecture", "Code signing procedures", "Update delivery integrity verification", "Rollback testing records"],
+      "guidance": "OTA updates are both a mitigation mechanism (for deploying patches) and an attack vector (if compromised). The CSMS must ensure that the OTA delivery pipeline maintains end-to-end integrity and authenticity. Sign all update packages with the OEM code signing key, stored in an HSM with multi-person authorization for signing operations. The vehicle must verify the signature before applying any update — reject unsigned or incorrectly signed packages. Use TLS with certificate pinning for the update download channel to prevent man-in-the-middle attacks. Implement staged rollout: deploy updates to a test fleet first, monitor for regressions for a defined soak period, then expand to broader populations in stages. The vehicle must verify update package integrity after download (hash comparison) and after installation (secure boot verification). Maintain rollback capability — if an update causes functional issues, the vehicle must be able to revert to the previous known-good version. Log all update events: download initiation, verification result, installation status, and post-update validation. This data feeds the fleet monitoring capability."
+    },
+    {
+      "id": "csms-ops-certificate-management",
+      "lifecycle_phase": "operations",
+      "obligation": "Manage vehicle and backend PKI certificates throughout their lifecycle",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(a)",
+      "reporting_timeline": null,
+      "evidence_required": ["PKI architecture documentation", "Certificate lifecycle management procedure", "Certificate revocation procedures", "Renewal automation evidence"],
+      "guidance": "Vehicle PKI certificates have operational lifetimes that span the vehicle's service life — potentially 15-20 years. The CSMS must address certificate lifecycle management including issuance, distribution, monitoring, renewal, and revocation. Monitor certificate expiry dates across the fleet and initiate renewal well before expiration — a vehicle with an expired certificate may lose connectivity to backend services or fail mutual TLS authentication. Define procedures for certificate revocation in case of key compromise: revocation must propagate to all relying parties, including other vehicles in V2X scenarios. Maintain certificate revocation lists (CRLs) or OCSP responders with adequate availability. Plan for cryptographic agility — if the signing algorithm becomes weak (e.g., RSA-2048 may be insufficient by the end of a vehicle's lifetime), the PKI architecture must support algorithm migration without requiring physical access to every vehicle. Test certificate renewal and revocation procedures regularly. Document the complete PKI trust chain from root CA to end-entity certificates."
+    },
+    {
+      "id": "csms-ops-backend-security",
+      "lifecycle_phase": "operations",
+      "obligation": "Secure the OEM backend services that connect to and manage vehicles in the field",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(a)",
+      "reporting_timeline": null,
+      "evidence_required": ["Backend security architecture", "Penetration test reports for vehicle APIs", "Access control matrix", "Security monitoring configuration"],
+      "guidance": "The OEM backend — telematics servers, OTA update infrastructure, mobile app APIs, fleet management platforms — is a direct attack path to vehicles. A compromised backend could push malicious firmware, exfiltrate vehicle data, or send unauthorized commands to the fleet. The CSMS must treat backend security as integral to vehicle cybersecurity. Apply standard IT security controls: network segmentation, intrusion detection, vulnerability scanning, patch management, and access control. Additionally, implement automotive-specific protections: rate limiting on vehicle command APIs, anomaly detection on vehicle-to-cloud communication patterns, and separation of vehicle management functions from corporate IT. Conduct regular penetration testing focused on vehicle-facing APIs and backend-to-vehicle communication channels. Implement mutual TLS between vehicles and backend services. Monitor for unauthorized API access patterns that might indicate credential theft or vehicle impersonation. The backend must be included in the scope of both the CSMS and the vehicle type TARA."
+    },
+    {
+      "id": "csms-ops-recall-readiness",
+      "lifecycle_phase": "operations",
+      "obligation": "Maintain readiness for cybersecurity-related field actions including recalls and campaigns",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.3",
+      "reporting_timeline": "Report to authority before initiating field action",
+      "evidence_required": ["Field action procedure for cybersecurity issues", "Communication templates for customer notification", "Dealer network readiness assessment", "VIN-level tracking system"],
+      "guidance": "When a cybersecurity vulnerability cannot be addressed through OTA update alone — or affects vehicles without OTA capability — a field action (recall or service campaign) may be necessary. The CSMS must include procedures for cybersecurity-related field actions. Define criteria for when a field action is required versus when an OTA update is sufficient. Establish the logistics: identify affected vehicles by VIN using the production traceability data and deployed firmware version records, draft customer notification letters, coordinate with the dealer network for workshop capacity, and prepare the remediation procedure (firmware reflash, hardware replacement, configuration change). Report the planned field action to the type approval authority before initiating customer notifications. Track remediation completion rates by VIN — the authority may require progress reporting. Maintain communication channels with customers who may be concerned about vehicle security. Test field action procedures through annual simulation exercises that validate end-to-end execution from vulnerability discovery through VIN identification, customer notification, dealer remediation, and completion tracking."
+    },
+    {
+      "id": "csms-ops-risk-assessment-update",
+      "lifecycle_phase": "operations",
+      "obligation": "Periodically update the TARA for each approved vehicle type based on field experience",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(f)",
+      "reporting_timeline": null,
+      "evidence_required": ["TARA update schedule", "Updated TARA documents", "Change justification records", "Approval authority notification (if material changes)"],
+      "guidance": "The TARA created during development becomes a living document in the operations phase. R155 paragraph 7.2.2.2(f) requires processes for ensuring the risk assessment is kept current. Review the TARA for each approved vehicle type at least annually and after any significant event: a new vulnerability discovered in a deployed component, a cybersecurity incident affecting the vehicle type, a change in the threat landscape (e.g., new attack tools targeting automotive systems), or a change to the vehicle through software update. When updating the TARA, reassess attack feasibility using current information — techniques that were theoretical at release may now have published exploit code. Update risk ratings and evaluate whether existing mitigations remain adequate. If the updated TARA reveals new high-risk threats requiring treatment, initiate the patch development process. If the risk profile has changed materially, inform the type approval authority — significant changes may require a new type approval assessment."
+    },
+    {
+      "id": "csms-ops-secure-diagnostics",
+      "lifecycle_phase": "operations",
+      "obligation": "Control access to vehicle diagnostic interfaces in the field",
+      "source_regulation": "r155",
+      "source_ref": "7.3.4",
+      "reporting_timeline": null,
+      "evidence_required": ["Diagnostic security policy", "Authentication mechanism documentation", "Authorized tool certification records", "Diagnostic session audit logs"],
+      "guidance": "Vehicle diagnostic interfaces (OBD-II, proprietary diagnostic connectors) provide deep access to ECU functionality and are a known attack vector. The CSMS must ensure that security-sensitive diagnostic functions are protected against unauthorized access. Implement ISO 14229 Security Access (service 0x27) with appropriate seed-key algorithms for all diagnostic services that can modify ECU software, configuration, or security parameters. Use different security levels for different access tiers: basic diagnostics (read DTCs, live data) may be available to third-party tools per right-to-repair regulations, but safety and security-critical functions (firmware flashing, key programming, calibration changes) must require OEM-authorized authentication. Manage diagnostic tool credentials — revoke access for tools reported stolen or compromised. Log diagnostic sessions in the vehicle, capturing the tool identity, services accessed, and any write operations performed. These logs support incident investigation when unauthorized diagnostic access is suspected. Review the diagnostic security architecture against evolving attack techniques, particularly for wireless diagnostic protocols."
+    },
+    {
+      "id": "csms-ops-data-forensics",
+      "lifecycle_phase": "operations",
+      "obligation": "Provide cybersecurity event data for forensic analysis of attempted or successful attacks",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(h)",
+      "reporting_timeline": null,
+      "evidence_required": ["Forensic data collection procedures", "Data preservation protocols", "Analysis tool inventory", "Forensic report templates"],
+      "guidance": "R155 paragraph 7.2.2.2(h) explicitly requires processes to provide relevant data supporting analysis of attempted or successful cyberattacks. This goes beyond log retention to include active forensic investigation capability. Define procedures for collecting forensic evidence from vehicles: secure extraction of ECU memory contents, vehicle event logs, communication recordings, and crash dump files. Establish chain-of-custody procedures so forensic evidence is admissible in legal proceedings if needed. Maintain forensic analysis tools and trained personnel capable of analyzing automotive-specific data: CAN bus captures, ECU firmware images, secure boot validation logs, and OTA update histories. Create standardized forensic report templates that document the investigation scope, methodology, findings, and conclusions. When a cyberattack is confirmed, preserve all relevant evidence before remediation activities alter the state of affected systems. Coordinate with law enforcement when criminal activity is suspected, following pre-established reporting channels. Conduct periodic forensic readiness assessments to verify that collection procedures work and analysis tools are current."
+    },
+    {
+      "id": "csms-ops-effectiveness-review",
+      "lifecycle_phase": "operations",
+      "obligation": "Assess whether deployed cybersecurity measures remain effective against evolving threats",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(g)",
+      "reporting_timeline": null,
+      "evidence_required": ["Effectiveness assessment reports", "Re-testing schedule and results", "Metrics dashboard", "Corrective action records"],
+      "guidance": "R155 paragraph 7.2.2.2(g) requires assessing whether cybersecurity measures implemented are still effective in light of new cyber threats and vulnerabilities. This is distinct from vulnerability monitoring — it is a periodic, structured evaluation of whether the overall security posture remains adequate. Conduct effectiveness assessments at least annually for each vehicle type, and after any significant change to the threat landscape. Methods include: re-running penetration tests against deployed vehicle configurations, reviewing incident and vulnerability data for patterns suggesting control weaknesses, assessing whether cryptographic algorithms remain adequately strong, evaluating whether network segmentation and access controls are still correctly configured after software updates, and benchmarking against current industry best practices. Define metrics that track security posture over time: number of unpatched critical vulnerabilities, mean time to patch, incident detection rate, and false positive rate in monitoring. If the assessment finds that a control is no longer effective, initiate remediation through the patch management process."
+    },
+    {
+      "id": "csms-ops-privacy-compliance",
+      "lifecycle_phase": "operations",
+      "obligation": "Ensure vehicle cybersecurity monitoring complies with data protection regulations",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.4(b)",
+      "reporting_timeline": null,
+      "evidence_required": ["Data protection impact assessment", "Privacy notice for vehicle data collection", "Consent mechanism documentation", "Data processing agreements"],
+      "guidance": "R155 paragraph 7.2.2.4(b) explicitly requires that cybersecurity monitoring capability respect paragraph 1.3 and the privacy rights of car owners or drivers, particularly with respect to consent. This creates a tension between comprehensive security monitoring and data minimization principles. Conduct a Data Protection Impact Assessment (DPIA) covering all cybersecurity telemetry collection. Identify the lawful basis for processing under applicable data protection law (GDPR in Europe, equivalent regulations elsewhere). For telemetry that constitutes personal data (e.g., data linked to a VIN which can be linked to an owner), implement appropriate safeguards: pseudonymization, purpose limitation (only for cybersecurity purposes), storage limitation (defined retention periods), and data subject access rights. Where consent is the lawful basis, implement clear opt-in mechanisms with the ability to withdraw consent. Design monitoring to operate effectively with anonymized or pseudonymized data where possible — aggregate fleet-level anomaly detection often does not require individual vehicle identification. Document all processing activities in the records of processing required by GDPR Article 30."
+    },
+    {
+      "id": "csms-ops-csms-certificate-renewal",
+      "lifecycle_phase": "operations",
+      "obligation": "Prepare for and maintain CSMS certificate renewal with the type approval authority",
+      "source_regulation": "r155",
+      "source_ref": "6.4",
+      "reporting_timeline": "Renewal application before certificate expiry (max validity 3 years)",
+      "evidence_required": ["CSMS maturity assessment", "Renewal application documentation", "Evidence of continuous improvement", "Updated process documentation"],
+      "guidance": "The CSMS certificate is valid for a maximum of 3 years per R155 paragraph 6.4. Before expiry, the manufacturer must apply for renewal, demonstrating that the CSMS continues to meet all requirements and has evolved to address the current threat landscape. Prepare for renewal by conducting an internal CSMS maturity assessment at least 6 months before certificate expiry. Review all processes for currency: has the TARA methodology been updated to address new threat categories? Have incident response procedures been tested and improved based on exercises and real incidents? Has the vulnerability monitoring scope expanded to cover new component types and data sources? Compile evidence of continuous improvement: updated procedures, exercise results, incident case studies (anonymized), and metrics showing security posture trends. Address any findings from the previous assessment that were noted as observations or opportunities for improvement. The renewal assessment is typically less extensive than the initial assessment but requires demonstrating operational evidence — not just documented procedures. Engage with the technical service early to understand any updated assessment criteria."
+    },
+    {
+      "id": "csms-ops-change-management",
+      "lifecycle_phase": "operations",
+      "obligation": "Assess cybersecurity impact of all changes to deployed vehicle software and configurations",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(d)",
+      "reporting_timeline": null,
+      "evidence_required": ["Change management procedure", "Cybersecurity impact assessment template", "Change advisory board records", "Post-change verification results"],
+      "guidance": "Every change to deployed vehicle software — feature updates, bug fixes, configuration changes, third-party component updates — must be assessed for cybersecurity impact before deployment. Define a cybersecurity impact assessment step in the change management process: does this change alter the attack surface, modify security controls, introduce new dependencies, or affect the TARA risk profile? Changes that affect cybersecurity must undergo security review, testing, and potentially TARA update before release. Changes that introduce new external interfaces, modify authentication mechanisms, or update cryptographic implementations require full security testing. Define expedited change procedures for emergency security patches that maintain adequate review while enabling rapid deployment. Maintain records of all changes deployed to each vehicle type, including the cybersecurity impact assessment result. Significant changes may trigger notification to the type approval authority or require a new type approval assessment."
+    },
+    {
+      "id": "csms-ops-fleet-segmentation",
+      "lifecycle_phase": "operations",
+      "obligation": "Track cybersecurity configuration state across the deployed vehicle fleet",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(g)",
+      "reporting_timeline": null,
+      "evidence_required": ["Fleet configuration tracking system", "Firmware version dashboards", "Configuration drift reports", "VIN-to-configuration mapping"],
+      "guidance": "Effective post-production cybersecurity requires knowing the exact software and configuration state of every vehicle in the fleet. When a vulnerability is discovered, the manufacturer must rapidly determine which vehicles are affected — this requires maintaining a VIN-level mapping of deployed firmware versions, applied patches, and security configurations. Implement a fleet management system that tracks OTA update deployment status, records which vehicles have received which patches, and identifies vehicles that are unreachable or have rejected updates. Generate regular reports showing the distribution of firmware versions across the fleet, highlighting vehicles running outdated or vulnerable versions. Define thresholds for action: if more than a defined percentage of vehicles remain unpatched after the deployment window, escalate to determine root causes (connectivity issues, user deferrals, update failures). This fleet-level visibility is fundamental to all other operational obligations — without it, vulnerability assessments, patch management, and incident scoping cannot function effectively."
+    },
+    {
+      "id": "csms-decom-key-revocation",
+      "lifecycle_phase": "decommissioning",
+      "obligation": "Revoke cryptographic keys and certificates when vehicles reach end of life",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(a)",
+      "reporting_timeline": null,
+      "evidence_required": ["Key revocation procedure", "Certificate revocation records", "PKI update records", "Decommissioning checklist"],
+      "guidance": "When a vehicle reaches end of life — whether through scrapping, export outside the supported market, or end of the manufacturer's support commitment — its cryptographic keys and certificates must be revoked. Revoke the vehicle's TLS client certificate to prevent decommissioned vehicles from authenticating to backend services. Revoke any V2X certificates to prevent the vehicle's identity from being used in vehicle-to-everything communication. Update certificate revocation lists and OCSP responders. If the vehicle used unique symmetric keys for ECU-to-ECU authentication, those keys should be treated as potentially compromised once the vehicle leaves the manufacturer's oversight — update backend systems to reject authentication attempts using revoked credentials. For vehicles that are scrapped, coordinate with the scrapping facility to ensure physical destruction of HSMs containing root key material where feasible. For vehicles exported to unsupported markets, provide the new owner with notice that connected services and security monitoring will be discontinued. Document all revocation actions per vehicle for audit purposes."
+    },
+    {
+      "id": "csms-decom-data-erasure",
+      "lifecycle_phase": "decommissioning",
+      "obligation": "Erase personal data and cybersecurity-sensitive information from decommissioned vehicles",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.4(b)",
+      "reporting_timeline": null,
+      "evidence_required": ["Data erasure procedure", "Data inventory per ECU", "Erasure verification records", "Data protection authority notifications (if required)"],
+      "guidance": "Decommissioned vehicles may contain personal data (location history, contact lists, paired device identifiers) and cybersecurity-sensitive data (cryptographic keys, network credentials, diagnostic logs). Both categories must be addressed at end of life. Define a data erasure procedure that identifies all storage locations across the vehicle's ECUs: infotainment system, telematics unit, body control module, gateway logs, and any other ECU that stores persistent data. Implement factory reset functionality that securely erases personal data from all relevant ECUs — this should be available to the owner as a self-service function and to the dealer as a pre-sale preparation step. For cybersecurity-sensitive data (keys, certificates), erasure or zeroization must be cryptographically sound — not just deletion of file system references but actual overwriting of key material. Verify erasure through post-reset validation that confirms no recoverable personal or security data remains. Comply with data protection regulations regarding data subject rights to erasure. Document the data categories stored in each ECU model and the erasure method applied."
+    },
+    {
+      "id": "csms-decom-end-of-support",
+      "lifecycle_phase": "decommissioning",
+      "obligation": "Notify vehicle owners and authorities when cybersecurity support ends for a vehicle type",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.3",
+      "reporting_timeline": "Minimum 12 months advance notice before support ends",
+      "evidence_required": ["End-of-support notification procedure", "Customer communication records", "Authority notification records", "Support timeline documentation"],
+      "guidance": "The manufacturer must define and communicate the cybersecurity support period for each vehicle type — the duration during which vulnerability monitoring, patch development, and incident response will be provided. Notify vehicle owners at least 12 months before cybersecurity support ends, explaining what the end of support means: no further security patches, discontinuation of vulnerability monitoring, and potential disconnection from backend services. Communicate the risks of operating an unsupported connected vehicle and recommend mitigations such as disabling connected features. Notify the type approval authority of the planned end of support, as this affects the validity of the type approval for new registrations. Define what happens at end of support: which backend services are discontinued, whether OTA update capability is preserved for potential third-party support, and whether the vehicle's connected features are actively disabled or simply unsupported. Consider offering extended support agreements for commercial fleets with longer operational lifetimes. Document the support timeline in the vehicle's type approval documentation."
+    },
+    {
+      "id": "csms-decom-backend-cleanup",
+      "lifecycle_phase": "decommissioning",
+      "obligation": "Remove decommissioned vehicle records from active monitoring and backend management systems",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(g)",
+      "reporting_timeline": null,
+      "evidence_required": ["Backend decommissioning procedure", "Vehicle record archival process", "Monitoring scope update records", "Storage cleanup verification"],
+      "guidance": "When a vehicle type reaches end of production and the last unit exits the support period, the manufacturer must manage the backend systems accordingly. Remove decommissioned VINs from active monitoring dashboards to prevent alert fatigue and ensure operational focus remains on supported vehicles. Archive — do not delete — vehicle records, telemetry history, and incident data. Archived data must remain accessible for regulatory inquiries, legal proceedings, or post-hoc analysis for a defined retention period (typically 10 years after end of support). Update the VSOC monitoring scope to exclude decommissioned vehicle types from active alert processing. Deactivate backend API endpoints specific to the decommissioned vehicle type after confirming that no supported vehicles depend on them. Clean up cloud resources associated with the decommissioned fleet: revoke backend service credentials, remove provisioning configurations, and archive backend logs. Document the decommissioning timeline with dates for each step completed."
+    },
+    {
+      "id": "csms-decom-knowledge-preservation",
+      "lifecycle_phase": "decommissioning",
+      "obligation": "Preserve cybersecurity knowledge and TARA documentation for decommissioned vehicle types",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(h)",
+      "reporting_timeline": null,
+      "evidence_required": ["Documentation archive inventory", "TARA archive records", "Retention schedule", "Access procedures for archived documentation"],
+      "guidance": "Even after a vehicle type is decommissioned, the cybersecurity documentation retains value for regulatory compliance, legal defense, and knowledge transfer to successor programs. Archive the complete TARA including all revisions and the rationale for risk treatment decisions. Archive penetration test reports, vulnerability assessment records, incident case files, and patch deployment records. Archive the SBOM at each major firmware version, as this supports retrospective vulnerability analysis if a component vulnerability is discovered years later. Define retention periods: regulatory requirements may mandate specific durations, but a minimum of 10 years after the last vehicle of that type exits service is prudent. Store archived documentation in a secure, indexed repository with controlled access — not on individual engineers' laptops or in obsolete file shares. Ensure the archive format remains readable: use open document formats and include the tools or specifications needed to interpret proprietary data formats. This archive supports knowledge transfer when designing cybersecurity for successor vehicle types."
+    },
+    {
+      "id": "csms-sup-cybersecurity-requirements",
+      "lifecycle_phase": "supplier_management",
+      "obligation": "Define and communicate cybersecurity requirements to all relevant suppliers",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.5",
+      "reporting_timeline": null,
+      "evidence_required": ["Cybersecurity requirements for suppliers document", "Contract clauses for cybersecurity obligations", "Supplier acknowledgment records", "Requirements allocation matrix"],
+      "guidance": "R155 paragraph 7.2.2.5 requires the manufacturer to manage cybersecurity dependencies with contracted suppliers, service providers, and sub-organizations. This starts with clearly defining what the manufacturer expects from each supplier. Allocate cybersecurity requirements from the vehicle TARA to the supplying tier: if a Tier-1 ECU supplier provides the gateway controller, they must receive the cybersecurity requirements for that component (secure boot, firewall rules, authentication mechanisms, key storage). Include cybersecurity requirements in procurement contracts with defined acceptance criteria, compliance verification methods, and consequences for non-compliance. Require suppliers to implement a CSMS conforming to ISO 21434 for cybersecurity-relevant components. Specify SBOM delivery requirements: the supplier must provide a complete SBOM for their component, including all open-source and third-party dependencies, in a machine-readable format (SPDX or CycloneDX). Define vulnerability notification obligations: the supplier must notify the OEM within a defined timeframe (typically 24-48 hours) of any vulnerability discovered in the supplied component."
+    },
+    {
+      "id": "csms-sup-assessment",
+      "lifecycle_phase": "supplier_management",
+      "obligation": "Assess supplier cybersecurity capabilities before and during engagement",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.5",
+      "reporting_timeline": null,
+      "evidence_required": ["Supplier cybersecurity assessment questionnaire", "Assessment results and scores", "Improvement plans for deficient suppliers", "Periodic reassessment schedule"],
+      "guidance": "Before awarding cybersecurity-relevant work to a supplier, assess their cybersecurity capabilities. Develop an assessment questionnaire covering: organizational security governance (do they have a CSMS or equivalent?), secure development practices (coding standards, static analysis, code review), vulnerability management processes, incident response capability, and relevant certifications (TISAX, ISO 27001, ISO 21434 conformance). Score the assessment and define minimum thresholds for different supplier tiers — a Tier-1 ECU supplier delivering safety-critical controllers needs stronger cybersecurity capabilities than a Tier-3 component supplier providing passive hardware. For suppliers who fall below thresholds, define improvement plans with milestones and reassessment dates. Conduct periodic reassessments: annually for critical suppliers, every 2-3 years for lower-risk suppliers. Track supplier cybersecurity maturity over time. If a supplier cannot meet minimum requirements within a reasonable timeframe, the CSMS must trigger a risk assessment and potentially a supplier change decision. Document all assessments for audit evidence."
+    },
+    {
+      "id": "csms-sup-incident-notification",
+      "lifecycle_phase": "supplier_management",
+      "obligation": "Require and monitor supplier cybersecurity incident and vulnerability notifications",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.5",
+      "reporting_timeline": "Suppliers must notify within 24-48 hours of discovery",
+      "evidence_required": ["Supplier notification requirements (contractual)", "Notification receipt log", "Response records per notification", "Communication channel documentation"],
+      "guidance": "Suppliers often discover vulnerabilities in their components before the OEM does — they have deeper knowledge of their own code and may receive reports from their own supply chain. The CSMS must establish contractual requirements for supplier notification and monitor compliance. Define notification timelines in supplier contracts: critical vulnerabilities with active exploitation must be reported within 24 hours, high-severity vulnerabilities within 48 hours, and all other relevant vulnerabilities within 5 business days. Specify the required notification content: affected component versions, vulnerability description, exploitation status, recommended mitigations, and estimated patch availability. Establish secure communication channels for vulnerability notifications — do not rely on general-purpose email for sensitive vulnerability details. Log all notifications received, track response actions, and measure supplier compliance with notification timelines. If a supplier consistently fails to meet notification obligations, escalate through contract management and consider this in the periodic supplier assessment. Feed supplier notifications into the vehicle-level vulnerability management process."
+    },
+    {
+      "id": "csms-sup-ongoing-monitoring",
+      "lifecycle_phase": "supplier_management",
+      "obligation": "Continuously monitor supplier cybersecurity posture throughout the relationship",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.5",
+      "reporting_timeline": null,
+      "evidence_required": ["Supplier monitoring procedure", "Risk rating updates", "Supplier security scorecards", "Escalation records"],
+      "guidance": "Supplier cybersecurity assessment is not a one-time activity — the supplier's security posture can change, and new risks can emerge throughout the vehicle's lifecycle. Implement ongoing monitoring through multiple channels: periodic reassessments (formal questionnaires), review of supplier incident and vulnerability notifications for frequency and quality, monitoring of public information (data breaches, regulatory actions, published CVEs in supplier products), and analysis of supplier-provided SBOM updates for new dependencies with known vulnerabilities. Maintain a supplier risk rating that reflects current cybersecurity posture, and define thresholds that trigger escalation or additional oversight. For critical suppliers (those providing components with direct impact on vehicle cybersecurity), conduct annual on-site or detailed remote audits. Track supplier performance metrics: notification timeliness, patch delivery speed, SBOM accuracy, and responsiveness to security inquiries. Share anonymized threat intelligence with key suppliers to enable proactive risk management. The monitoring scope should cover not just direct Tier-1 suppliers but also critical Tier-2 and Tier-3 suppliers identified through supply chain risk assessment."
+    },
+    {
+      "id": "csms-sup-sbom-management",
+      "lifecycle_phase": "supplier_management",
+      "obligation": "Collect and maintain supplier software bills of materials for vulnerability tracking",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.2(b)",
+      "reporting_timeline": null,
+      "evidence_required": ["SBOM collection procedure", "SBOM inventory database", "SBOM format requirements", "Supplier SBOM compliance records"],
+      "guidance": "The vehicle-level SBOM required for vulnerability monitoring under R155 paragraph 7.2.2.2(b) depends on collecting accurate SBOMs from every supplier that contributes software components. Define SBOM delivery requirements in supplier contracts: format (SPDX or CycloneDX), granularity (must include all open-source components, version numbers, and license information), delivery timing (with each component release), and update obligations (supplier must deliver updated SBOMs when they update their dependencies). Validate received SBOMs for completeness and accuracy — cross-reference against known dependency databases, flag SBOMs with suspiciously few entries, and spot-check through independent binary analysis of delivered components. Aggregate supplier SBOMs into a vehicle-level SBOM that maps every software component to its supplier, version, and the vehicle types where it is deployed. This aggregated SBOM is the foundation for vulnerability monitoring: when a CVE is published, the SBOM lookup must identify all affected vehicle types within hours, not days. Automate SBOM ingestion and vulnerability correlation where possible."
+    },
+    {
+      "id": "csms-sup-change-notification",
+      "lifecycle_phase": "supplier_management",
+      "obligation": "Require supplier notification of cybersecurity-relevant changes to supplied components",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.5",
+      "reporting_timeline": "Notification before change deployment",
+      "evidence_required": ["Supplier change notification procedure", "Change notification records", "Impact assessment records per change", "Contract clauses mandating notification"],
+      "guidance": "Suppliers may update their components — new firmware versions, dependency updates, configuration changes — that affect the cybersecurity properties relied upon by the OEM. The CSMS must require suppliers to notify the OEM of any cybersecurity-relevant change before it is incorporated into vehicle production or field updates. Define what constitutes a cybersecurity-relevant change: any modification to security controls, cryptographic implementations, authentication mechanisms, communication protocols, or open-source dependencies. Require the supplier to provide a cybersecurity impact assessment for each change, explaining what changed, why, and how it affects the security properties of the component. The OEM must evaluate each supplier change notification against the vehicle-level TARA and determine whether additional testing, TARA update, or type approval notification is required. Unapproved supplier changes must not enter the vehicle production or update pipeline. Track all supplier change notifications and their disposition. This process prevents unauthorized or unassessed changes from degrading the vehicle's security posture."
+    },
+    {
+      "id": "csms-sup-cascade-requirements",
+      "lifecycle_phase": "supplier_management",
+      "obligation": "Ensure cybersecurity requirements cascade through the multi-tier supply chain",
+      "source_regulation": "r155",
+      "source_ref": "7.2.2.5",
+      "reporting_timeline": null,
+      "evidence_required": ["Supply chain mapping for cybersecurity-critical components", "Tier-2/3 cybersecurity requirement evidence", "Cascade verification records", "Sub-supplier incident notification chain"],
+      "guidance": "R155 paragraph 7.2.2.5 references dependencies with contracted suppliers, service providers, and manufacturer's sub-organizations. In automotive supply chains, cybersecurity vulnerabilities can originate at any tier. A compromised Tier-3 chip vendor, an insecure Tier-2 middleware provider, or a Tier-1 integrator with weak secure development practices can all introduce vulnerabilities into the vehicle. The CSMS must require Tier-1 suppliers to cascade cybersecurity requirements to their own suppliers — and provide evidence that this cascading occurs. Map the supply chain for cybersecurity-critical components to at least Tier-2 depth, and for the most critical components (HSMs, cryptographic libraries, operating systems) to Tier-3. Require Tier-1 suppliers to collect and forward SBOMs from their sub-suppliers. Establish incident notification chains that ensure a vulnerability discovered at any tier reaches the OEM within defined timelines. Verify cascade through periodic supplier audits that include sub-supplier management as an assessment criterion. This multi-tier visibility is difficult to achieve but is increasingly expected by type approval authorities."
+    }
+  ]
+}
