@@ -273,6 +273,7 @@ export interface SearchResult {
   title: string | null;
   snippet: string;
   relevance: number;
+  content_type?: string;  // "regulation", "standard", "architecture_pattern", "attack_pattern", "csms_obligation"
 }
 
 export interface SourceInfo {

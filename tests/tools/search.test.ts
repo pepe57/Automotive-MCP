@@ -132,10 +132,125 @@ describe('search_requirements tool', () => {
       'Organizations shall establish processes for managing cybersecurity vulnerabilities throughout the vehicle lifecycle.'
     );
 
+    // Create architecture_patterns table and FTS5
+    db.exec(`
+      CREATE TABLE architecture_patterns (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        domain TEXT NOT NULL,
+        description TEXT NOT NULL,
+        components TEXT NOT NULL,
+        trust_boundaries TEXT NOT NULL,
+        applicable_standards TEXT NOT NULL,
+        threat_mitigations TEXT NOT NULL,
+        guidance TEXT NOT NULL,
+        diagram_ascii TEXT
+      );
+
+      CREATE VIRTUAL TABLE architecture_patterns_fts USING fts5(
+        id, name, domain, description, components, guidance,
+        content='architecture_patterns',
+        content_rowid='rowid'
+      );
+    `);
+
+    // Create attack_patterns table and FTS5
+    db.exec(`
+      CREATE TABLE attack_patterns (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        target_component TEXT NOT NULL,
+        attack_vector TEXT NOT NULL,
+        stride_category TEXT NOT NULL,
+        feasibility TEXT NOT NULL,
+        impact TEXT NOT NULL,
+        known_mitigations TEXT NOT NULL,
+        r155_annex5_refs TEXT,
+        description TEXT NOT NULL,
+        prerequisites TEXT,
+        detection_methods TEXT
+      );
+
+      CREATE VIRTUAL TABLE attack_patterns_fts USING fts5(
+        id, name, target_component, attack_vector, description,
+        content='attack_patterns',
+        content_rowid='rowid'
+      );
+    `);
+
+    // Create csms_obligations table and FTS5
+    db.exec(`
+      CREATE TABLE csms_obligations (
+        id TEXT PRIMARY KEY,
+        lifecycle_phase TEXT NOT NULL,
+        obligation TEXT NOT NULL,
+        source_regulation TEXT NOT NULL,
+        source_ref TEXT NOT NULL,
+        reporting_timeline TEXT,
+        evidence_required TEXT NOT NULL,
+        guidance TEXT NOT NULL
+      );
+
+      CREATE VIRTUAL TABLE csms_obligations_fts USING fts5(
+        id, lifecycle_phase, obligation, guidance,
+        content='csms_obligations',
+        content_rowid='rowid'
+      );
+    `);
+
+    // Insert architecture pattern test data
+    db.prepare(`
+      INSERT INTO architecture_patterns (id, name, domain, description, components, trust_boundaries, applicable_standards, threat_mitigations, guidance)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'ids-gateway',
+      'Intrusion Detection Gateway',
+      'network-architecture',
+      'A gateway-based intrusion detection system for monitoring CAN bus and Ethernet traffic in vehicles.',
+      '["Gateway ECU", "IDS Sensor", "Security Event Logger"]',
+      '["External network boundary", "Internal CAN bus"]',
+      '["iso_21434", "r155"]',
+      '[]',
+      'Deploy intrusion detection at the vehicle gateway to monitor for anomalous CAN bus traffic patterns.'
+    );
+
+    // Insert attack pattern test data
+    db.prepare(`
+      INSERT INTO attack_patterns (id, name, target_component, attack_vector, stride_category, feasibility, impact, known_mitigations, description)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'atk-ids-bypass',
+      'Intrusion Detection Bypass via Packet Fragmentation',
+      'Gateway',
+      'Network',
+      'E',
+      '{"elapsed_time": "weeks", "expertise": "expert"}',
+      'High',
+      '["Deep packet inspection", "Fragment reassembly"]',
+      'Attacker fragments malicious CAN frames to evade intrusion detection systems monitoring gateway traffic.'
+    );
+
+    // Insert CSMS obligation test data
+    db.prepare(`
+      INSERT INTO csms_obligations (id, lifecycle_phase, obligation, source_regulation, source_ref, evidence_required, guidance)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'csms-ops-001',
+      'operations',
+      'Monitor and respond to cybersecurity incidents affecting vehicles in the field',
+      'r155',
+      '7.2.2.2(g)',
+      '["Incident response plan", "Monitoring logs"]',
+      'Establish a vehicle security operations center (VSOC) with intrusion detection monitoring capabilities.'
+    );
+
     // Populate FTS5 tables
     db.exec(`
       INSERT INTO regulation_content_fts(regulation_content_fts) VALUES('rebuild');
       INSERT INTO standard_clauses_fts(standard_clauses_fts) VALUES('rebuild');
+      INSERT INTO architecture_patterns_fts(architecture_patterns_fts) VALUES('rebuild');
+      INSERT INTO attack_patterns_fts(attack_patterns_fts) VALUES('rebuild');
+      INSERT INTO csms_obligations_fts(csms_obligations_fts) VALUES('rebuild');
     `);
   });
 
@@ -337,5 +452,68 @@ describe('search_requirements tool', () => {
 
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(0);
+  });
+
+  it('should return results with content_type field', () => {
+    const input: SearchRequirementsInput = {
+      query: 'risk assessment'
+    };
+
+    const result = searchRequirements(db, input);
+
+    expect(result.length).toBeGreaterThan(0);
+
+    for (const r of result) {
+      expect(r.content_type).toBeDefined();
+      expect(['regulation', 'standard', 'architecture_pattern', 'attack_pattern', 'csms_obligation']).toContain(r.content_type);
+    }
+  });
+
+  it('should search architecture patterns and attack patterns for intrusion detection', () => {
+    const input: SearchRequirementsInput = {
+      query: 'intrusion detection',
+      limit: 50
+    };
+
+    const result = searchRequirements(db, input);
+
+    expect(result.length).toBeGreaterThan(0);
+
+    const contentTypes = new Set(result.map(r => r.content_type));
+    expect(contentTypes.has('architecture_pattern')).toBe(true);
+    expect(contentTypes.has('attack_pattern')).toBe(true);
+  });
+
+  it('should search CSMS obligations', () => {
+    const input: SearchRequirementsInput = {
+      query: 'cybersecurity incidents',
+      limit: 50
+    };
+
+    const result = searchRequirements(db, input);
+
+    expect(result.length).toBeGreaterThan(0);
+
+    const csmsResults = result.filter(r => r.content_type === 'csms_obligation');
+    expect(csmsResults.length).toBeGreaterThan(0);
+    expect(csmsResults[0].source).toBe('csms_obligations');
+  });
+
+  it('should find all content types via search', () => {
+    // Use a broad term that appears in test data across multiple content types
+    const input: SearchRequirementsInput = {
+      query: 'cybersecurity',
+      limit: 100
+    };
+
+    const result = searchRequirements(db, input);
+
+    const contentTypes = new Set(result.map(r => r.content_type));
+
+    // Should find at least regulations and standards (from existing test data)
+    expect(contentTypes.has('regulation')).toBe(true);
+    expect(contentTypes.has('standard')).toBe(true);
+    // CSMS obligations mention cybersecurity
+    expect(contentTypes.has('csms_obligation')).toBe(true);
   });
 });

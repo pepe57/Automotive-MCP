@@ -100,7 +100,8 @@ export function searchRequirements(db: InstanceType<typeof Database>, input: Sea
         reference: row.reference,
         title: row.title,
         snippet: row.snippet,
-        relevance: row.rank
+        relevance: row.rank,
+        content_type: 'regulation'
       });
     }
 
@@ -139,8 +140,120 @@ export function searchRequirements(db: InstanceType<typeof Database>, input: Sea
         reference: row.reference,
         title: row.title,
         snippet: row.snippet,
-        relevance: row.rank
+        relevance: row.rank,
+        content_type: 'standard'
       });
+    }
+
+    // Search architecture patterns using FTS5
+    try {
+      const archQuery = `
+        SELECT
+          'architecture_patterns' as source,
+          id as reference,
+          name as title,
+          snippet(architecture_patterns_fts, -1, '**', '**', '...', 32) as snippet,
+          bm25(architecture_patterns_fts) as rank
+        FROM architecture_patterns_fts
+        WHERE architecture_patterns_fts MATCH ?
+        ORDER BY rank
+        LIMIT ?
+      `;
+
+      const archResults = db.prepare(archQuery).all(sanitizedQuery, limit) as Array<{
+        source: string;
+        reference: string;
+        title: string | null;
+        snippet: string;
+        rank: number;
+      }>;
+
+      for (const row of archResults) {
+        results.push({
+          source: row.source,
+          reference: row.reference,
+          title: row.title,
+          snippet: row.snippet,
+          relevance: row.rank,
+          content_type: 'architecture_pattern'
+        });
+      }
+    } catch {
+      // architecture_patterns_fts table may not exist in test databases
+    }
+
+    // Search attack patterns using FTS5
+    try {
+      const attackQuery = `
+        SELECT
+          'attack_patterns' as source,
+          id as reference,
+          name as title,
+          snippet(attack_patterns_fts, -1, '**', '**', '...', 32) as snippet,
+          bm25(attack_patterns_fts) as rank
+        FROM attack_patterns_fts
+        WHERE attack_patterns_fts MATCH ?
+        ORDER BY rank
+        LIMIT ?
+      `;
+
+      const attackResults = db.prepare(attackQuery).all(sanitizedQuery, limit) as Array<{
+        source: string;
+        reference: string;
+        title: string | null;
+        snippet: string;
+        rank: number;
+      }>;
+
+      for (const row of attackResults) {
+        results.push({
+          source: row.source,
+          reference: row.reference,
+          title: row.title,
+          snippet: row.snippet,
+          relevance: row.rank,
+          content_type: 'attack_pattern'
+        });
+      }
+    } catch {
+      // attack_patterns_fts table may not exist in test databases
+    }
+
+    // Search CSMS obligations using FTS5
+    try {
+      const csmsQuery = `
+        SELECT
+          'csms_obligations' as source,
+          id as reference,
+          obligation as title,
+          snippet(csms_obligations_fts, -1, '**', '**', '...', 32) as snippet,
+          bm25(csms_obligations_fts) as rank
+        FROM csms_obligations_fts
+        WHERE csms_obligations_fts MATCH ?
+        ORDER BY rank
+        LIMIT ?
+      `;
+
+      const csmsResults = db.prepare(csmsQuery).all(sanitizedQuery, limit) as Array<{
+        source: string;
+        reference: string;
+        title: string | null;
+        snippet: string;
+        rank: number;
+      }>;
+
+      for (const row of csmsResults) {
+        results.push({
+          source: row.source,
+          reference: row.reference,
+          title: row.title,
+          snippet: row.snippet,
+          relevance: row.rank,
+          content_type: 'csms_obligation'
+        });
+      }
+    } catch {
+      // csms_obligations_fts table may not exist in test databases
     }
 
     // Sort all results by relevance (BM25 rank - lower is better)
