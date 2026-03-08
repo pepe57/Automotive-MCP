@@ -24,7 +24,7 @@ export function exportComplianceMatrix(
   if (format && !validFormats.includes(format)) {
     throw new Error(`Invalid format: ${format}. Valid formats: ${validFormats.join(', ')}`);
   }
-  const validRegulations = ['r155', 'r156'];
+  const validRegulations = ['r155', 'r156', 'gbt_40857', 'gbt_40856', 'kmvss_18_3', 'ais_189', 'mlit_guidelines'];
   if (regulation && !validRegulations.includes(regulation)) {
     throw new Error(`Invalid regulation: ${regulation}. Valid regulations: ${validRegulations.join(', ')}`);
   }

@@ -195,10 +195,10 @@ const TOOLS: ToolDefinition[] = [
       properties: {
         regulation: {
           type: 'string',
-          enum: ['r155', 'r156'],
+          enum: ['r155', 'r156', 'gbt_40857', 'gbt_40856', 'kmvss_18_3', 'ais_189', 'mlit_guidelines'],
           default: 'r155',
           description:
-            'Regulation to generate matrix for. Default: "r155".',
+            'Regulation to generate matrix for. Supports UNECE (r155, r156), China (gbt_40857, gbt_40856), Korea (kmvss_18_3), India (ais_189), and Japan (mlit_guidelines). Default: "r155".',
         },
         format: {
           type: 'string',

@@ -71,4 +71,31 @@ describe('export_compliance_matrix tool', () => {
     expect(result).toBeDefined();
     expect(result.content).toContain('Guidance');
   });
+
+  it('should export GB/T 40857 (China) compliance matrix', () => {
+    const input: ExportComplianceMatrixInput = { regulation: 'gbt_40857' };
+    const result = exportComplianceMatrix(db, input);
+
+    expect(result).toBeDefined();
+    expect(result.content).toContain('# GBT_40857 Compliance Matrix');
+    expect(result.statistics.total_requirements).toBeGreaterThan(0);
+  });
+
+  it('should return non-zero statistics for new market regulations', () => {
+    const newRegulations = ['gbt_40857', 'gbt_40856', 'kmvss_18_3', 'ais_189', 'mlit_guidelines'];
+
+    for (const regulation of newRegulations) {
+      const input: ExportComplianceMatrixInput = { regulation };
+      const result = exportComplianceMatrix(db, input);
+
+      expect(result.statistics.total_requirements).toBeGreaterThan(0,
+        `Expected ${regulation} to have requirements in the database`);
+    }
+  });
+
+  it('should reject invalid regulation ID', () => {
+    const input: ExportComplianceMatrixInput = { regulation: 'invalid_reg' };
+
+    expect(() => exportComplianceMatrix(db, input)).toThrow(/Invalid regulation/);
+  });
 });
