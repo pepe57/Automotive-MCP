@@ -19,8 +19,9 @@ import { searchRequirements } from './search.js';
 import { listWorkProducts } from './workproducts.js';
 import { exportComplianceMatrix } from './export.js';
 import { getArchitecturePattern } from './architecture.js';
+import { searchAttackPatterns } from './attacks.js';
 import { getAbout, type AboutContext } from './about.js';
-import type { ListSourcesInput, GetRequirementInput, SearchRequirementsInput, ListWorkProductsInput, ExportComplianceMatrixInput, GetArchitecturePatternInput } from '../types/index.js';
+import type { ListSourcesInput, GetRequirementInput, SearchRequirementsInput, ListWorkProductsInput, ExportComplianceMatrixInput, GetArchitecturePatternInput, SearchAttackPatternsInput } from '../types/index.js';
 
 /**
  * Tool definition with name, description, input schema, and handler function
@@ -237,6 +238,43 @@ const TOOLS: ToolDefinition[] = [
     handler: (db: InstanceType<typeof Database>, args: unknown) => {
       const input = args as GetArchitecturePatternInput;
       return getArchitecturePattern(db, input);
+    },
+  },
+  {
+    name: 'search_attack_patterns',
+    description:
+      'Search automotive-specific attack patterns by keyword, target component, or STRIDE category. Returns attack descriptions, feasibility ratings per ISO 21434 Annex G, known mitigations, and cross-references to R155 Annex 5 threats.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description:
+            'Search query text for full-text search across attack pattern names, descriptions, and attack vectors. Optional if target_component or stride_category is provided.',
+        },
+        target_component: {
+          type: 'string',
+          description:
+            'Filter by target component (e.g., "ECU", "Telematics", "Gateway", "OTA", "CAN_Ethernet", "V2X", "Diagnostics", "Sensors", "Access_Control").',
+        },
+        stride_category: {
+          type: 'string',
+          description:
+            'Filter by STRIDE category (e.g., "S" for Spoofing, "T" for Tampering, "R" for Repudiation, "I" for Information Disclosure, "D" for Denial of Service, "E" for Elevation of Privilege, or combinations like "ST", "IE").',
+        },
+        limit: {
+          type: 'number',
+          default: 10,
+          minimum: 1,
+          maximum: 50,
+          description:
+            'Maximum number of results to return. Default: 10, maximum: 50.',
+        },
+      },
+    },
+    handler: (db: InstanceType<typeof Database>, args: unknown) => {
+      const input = args as SearchAttackPatternsInput;
+      return searchAttackPatterns(db, input);
     },
   },
 ];

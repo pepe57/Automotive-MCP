@@ -210,6 +210,13 @@ export interface ExportComplianceMatrixOutput {
   };
 }
 
+export interface SearchAttackPatternsInput {
+  query?: string;
+  target_component?: string;
+  stride_category?: string;
+  limit?: number;
+}
+
 export interface GetTypeApprovalChecklistInput {
   regulation: string;
   vehicle_category?: string;

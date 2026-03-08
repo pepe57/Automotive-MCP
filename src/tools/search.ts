@@ -19,7 +19,7 @@ import type { SearchRequirementsInput, SearchResult } from '../types/index.js';
  * @param query - Raw search query
  * @returns Sanitized query safe for FTS5 MATCH
  */
-function sanitizeQuery(query: string): string {
+export function sanitizeQuery(query: string): string {
   // Remove leading/trailing whitespace
   const trimmed = query.trim();
 
