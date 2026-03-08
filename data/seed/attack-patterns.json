@@ -1,0 +1,3100 @@
+{
+  "patterns": [
+    {
+      "id": "ecu-firmware-extraction",
+      "name": "ECU Firmware Extraction via Debug Port",
+      "target_component": "ECU",
+      "attack_vector": "Physical access to JTAG or SWD debug interface on target ECU to dump firmware for reverse engineering",
+      "stride_category": "I",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Firmware binary exposed, enabling discovery of cryptographic keys, proprietary algorithms, and vulnerabilities for further attacks",
+      "known_mitigations": [
+        "Disable JTAG/SWD in production fuses",
+        "Use secure boot with encrypted firmware storage",
+        "Implement HSM-backed key storage separate from application processor"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.1"
+      ],
+      "description": "An attacker with physical access to an ECU extracts firmware through exposed debug interfaces such as JTAG or SWD. The attacker connects a debug probe to test points on the PCB, halts the processor, and reads flash memory contents. The extracted binary is then analyzed using disassemblers and decompilers to identify cryptographic keys, authentication bypass paths, and protocol vulnerabilities. This attack is foundational \u2014 the information gained enables more sophisticated remote attacks against the vehicle fleet.",
+      "prerequisites": [
+        "Physical access to ECU PCB",
+        "Knowledge of microcontroller family",
+        "Debug probe compatible with target architecture"
+      ],
+      "detection_methods": [
+        "Tamper-evident enclosure inspection",
+        "Debug port access logging via HSM",
+        "Runtime integrity verification detecting halted processor"
+      ]
+    },
+    {
+      "id": "ecu-fault-injection",
+      "name": "Voltage Glitch Fault Injection on ECU",
+      "target_component": "ECU",
+      "attack_vector": "Controlled voltage glitching on power rail or clock line to bypass secure boot verification",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Secure boot bypassed, allowing execution of unsigned or modified firmware on the ECU",
+      "known_mitigations": [
+        "Implement voltage and clock glitch detectors in silicon",
+        "Use redundant signature verification with temporal separation",
+        "Design boot ROM with glitch-resistant instruction sequences"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.1",
+        "A5.A.6"
+      ],
+      "description": "An attacker uses precise voltage manipulation on the ECU power rail to cause instruction skips during secure boot signature verification. By timing a brief voltage drop to coincide with the branch instruction after signature check, the attacker forces the processor to skip the failure path and proceed with boot. This requires detailed knowledge of the boot sequence timing, typically obtained through prior firmware extraction. Successful attack allows running arbitrary firmware.",
+      "prerequisites": [
+        "Firmware extraction completed",
+        "Detailed boot sequence timing analysis",
+        "Custom voltage glitching hardware"
+      ],
+      "detection_methods": [
+        "Hardware voltage monitoring circuits",
+        "Boot attestation reported to backend",
+        "Redundant verification with different timing"
+      ]
+    },
+    {
+      "id": "ecu-side-channel-key-extraction",
+      "name": "Side-Channel Key Extraction from ECU",
+      "target_component": "ECU",
+      "attack_vector": "Power analysis or electromagnetic emanation monitoring during cryptographic operations to extract secret keys",
+      "stride_category": "I",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Cryptographic keys extracted, enabling message forgery, firmware signing bypass, or authentication impersonation",
+      "known_mitigations": [
+        "Use HSM with side-channel resistant implementations",
+        "Apply masking and shuffling countermeasures in software crypto",
+        "Implement constant-time cryptographic algorithms"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.1"
+      ],
+      "description": "An attacker monitors power consumption or electromagnetic emissions from an ECU during cryptographic operations. Using differential power analysis (DPA) or correlation power analysis (CPA), statistical methods reveal secret key bits by correlating power traces with hypothetical intermediate values. Thousands of traces are collected during repeated operations, then analyzed offline. This attack targets ECUs that perform cryptography in software without side-channel countermeasures.",
+      "prerequisites": [
+        "Physical proximity to target ECU",
+        "Ability to trigger repeated cryptographic operations",
+        "Power analysis equipment and statistical analysis software"
+      ],
+      "detection_methods": [
+        "Monitoring for unusual repeated operation patterns",
+        "HSM tamper detection",
+        "Anomaly detection on cryptographic operation frequency"
+      ]
+    },
+    {
+      "id": "ecu-supply-chain-implant",
+      "name": "Supply Chain Firmware Implant in ECU",
+      "target_component": "ECU",
+      "attack_vector": "Compromise of ECU supplier build pipeline to inject backdoor code into production firmware before delivery to OEM",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "months",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Backdoored ECUs deployed across vehicle fleet, enabling persistent remote access or data exfiltration from production vehicles",
+      "known_mitigations": [
+        "Implement SBOM validation and binary reproducibility checks",
+        "Require code signing from OEM-controlled HSM after independent build verification",
+        "Conduct regular supply chain security audits per ISO 21434 clause 7"
+      ],
+      "r155_annex5_refs": [
+        "A5.D.1"
+      ],
+      "description": "An attacker compromises a tier-1 or tier-2 supplier's CI/CD pipeline and injects malicious code into ECU firmware during the build process. The implant is designed to be dormant during standard testing and activates only under specific runtime conditions. Since the OEM trusts the supplier's build output, the backdoored firmware passes acceptance testing and is installed in production vehicles. Detection requires binary analysis comparing supplier output against independently built reference images.",
+      "prerequisites": [
+        "Access to supplier build infrastructure",
+        "Knowledge of firmware architecture and test procedures",
+        "Ability to maintain persistent access to build systems"
+      ],
+      "detection_methods": [
+        "Binary reproducibility verification",
+        "SBOM diff analysis between releases",
+        "Runtime behavior monitoring for anomalous network connections"
+      ]
+    },
+    {
+      "id": "ecu-bootloader-downgrade",
+      "name": "ECU Bootloader Version Downgrade",
+      "target_component": "ECU",
+      "attack_vector": "Exploiting weak anti-rollback mechanisms to flash older, vulnerable bootloader version onto ECU",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Known vulnerabilities in older bootloader version become exploitable, undermining all higher-layer security measures",
+      "known_mitigations": [
+        "Implement monotonic hardware anti-rollback counters in eFuse or RPMB",
+        "Verify bootloader version against minimum version stored in HSM",
+        "Log all flash operations to tamper-evident storage"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6"
+      ],
+      "description": "An attacker exploits an ECU that uses software-only version tracking to install an older bootloader with known vulnerabilities. The attacker accesses the diagnostic interface, enters a programming session, and flashes a previously captured bootloader image. Because the version counter is stored in writable flash rather than one-time-programmable memory, the counter can be reset along with the bootloader. The older bootloader may lack signature verification, have authentication bypasses, or contain buffer overflows.",
+      "prerequisites": [
+        "Copy of older vulnerable bootloader",
+        "Diagnostic access to ECU",
+        "Knowledge of flashing protocol"
+      ],
+      "detection_methods": [
+        "Backend version tracking mismatch alerts",
+        "HSM-based version verification on boot",
+        "Periodic remote attestation"
+      ]
+    },
+    {
+      "id": "ecu-memory-corruption",
+      "name": "ECU Runtime Memory Corruption",
+      "target_component": "ECU",
+      "attack_vector": "Buffer overflow or format string vulnerability in ECU application code triggered via crafted CAN/UDS messages",
+      "stride_category": "TE",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Arbitrary code execution on ECU, enabling manipulation of safety-critical functions or persistent backdoor installation",
+      "known_mitigations": [
+        "Use memory-safe languages or strict coding standards (MISRA C)",
+        "Enable MPU/MMU stack protection and NX regions",
+        "Implement input validation and length checks on all bus message handlers"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.1",
+        "A5.A.3"
+      ],
+      "description": "An attacker sends specially crafted CAN messages or UDS diagnostic requests that overflow fixed-size buffers in the ECU application layer. By controlling the overflow data, the attacker overwrites return addresses or function pointers to redirect execution. On ECUs without memory protection (common in low-cost microcontrollers), this enables full code execution. The crafted messages are developed through fuzzing the target ECU on a bench setup after firmware extraction.",
+      "prerequisites": [
+        "Firmware reverse engineering completed",
+        "Access to vehicle CAN bus",
+        "Bench setup for payload development"
+      ],
+      "detection_methods": [
+        "CAN IDS detecting anomalous message patterns",
+        "Runtime stack canary verification",
+        "Watchdog timer detecting execution flow anomalies"
+      ]
+    },
+    {
+      "id": "ecu-calibration-tampering",
+      "name": "ECU Calibration Data Tampering",
+      "target_component": "ECU",
+      "attack_vector": "Modifying calibration parameters in engine or ADAS ECU via diagnostic services to alter vehicle behavior",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Vehicle performance altered \u2014 emissions compliance violated, safety margins reduced, or engine damage caused by incorrect parameters",
+      "known_mitigations": [
+        "Authenticate calibration write operations with backend authorization",
+        "Store calibration checksums in HSM",
+        "Implement calibration integrity monitoring with periodic self-checks"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3",
+        "A5.A.7"
+      ],
+      "description": "An attacker uses standard diagnostic protocols (UDS WriteDataByIdentifier 0x2E or RequestDownload 0x34) to modify calibration parameters stored in ECU non-volatile memory. Targets include fuel injection timing, emission control thresholds, ADAS detection confidence levels, and braking force distribution tables. Many ECUs protect calibration data only with security access (seed-key) authentication, which is often defeated through key extraction or algorithmic weakness.",
+      "prerequisites": [
+        "Diagnostic access to vehicle OBD-II port",
+        "Knowledge of calibration data identifiers",
+        "Valid or bypassed security access credentials"
+      ],
+      "detection_methods": [
+        "Calibration checksum verification on startup",
+        "Backend calibration version tracking",
+        "Emissions monitoring detecting out-of-spec values"
+      ]
+    },
+    {
+      "id": "ecu-secure-boot-bypass-toctou",
+      "name": "ECU Secure Boot TOCTOU Bypass",
+      "target_component": "ECU",
+      "attack_vector": "Time-of-check-to-time-of-use race condition during secure boot to swap verified image with malicious payload",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Modified firmware executes despite secure boot verification passing, undermining entire chain of trust",
+      "known_mitigations": [
+        "Execute boot image directly from verified memory region without copy",
+        "Use hardware-enforced memory locking after verification",
+        "Implement boot chain with hardware root of trust (e.g., ARM TrustZone secure boot)"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.1"
+      ],
+      "description": "An attacker exploits a timing gap between when the bootloader verifies a firmware image signature and when it transfers execution to that image. During this window, the attacker uses DMA-capable hardware or a compromised co-processor to modify the verified image in RAM. The secure boot check passes because the original image was valid, but the executed code is the attacker's payload. This requires precise timing and detailed knowledge of the boot sequence memory layout.",
+      "prerequisites": [
+        "Detailed boot sequence timing analysis",
+        "DMA access or compromised co-processor",
+        "Physical access for hardware manipulation"
+      ],
+      "detection_methods": [
+        "Runtime code integrity measurement",
+        "Hardware memory locking status verification",
+        "Boot attestation with post-boot measurement"
+      ]
+    },
+    {
+      "id": "ecu-debug-authentication-bypass",
+      "name": "ECU Debug Authentication Bypass",
+      "target_component": "ECU",
+      "attack_vector": "Bypassing or resetting debug authentication on ECU microcontroller through undocumented commands or silicon bugs",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Full debug access to production ECU, enabling memory read/write, breakpoints, and firmware extraction despite production lockdown",
+      "known_mitigations": [
+        "Use silicon with no known debug bypass vulnerabilities",
+        "Permanently disable debug via hardware fuses during manufacturing",
+        "Implement secondary authentication via HSM for any remaining debug paths"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.1"
+      ],
+      "description": "An attacker exploits known or newly discovered silicon-level vulnerabilities to bypass debug authentication on production-locked microcontrollers. Common techniques include voltage glitching during the debug authentication check, exploiting undocumented test modes left active by the silicon vendor, or using ROM bootloader vulnerabilities to re-enable debug access. Once debug is unlocked, the attacker gains full control over the processor, reading all memory including HSM communication buffers.",
+      "prerequisites": [
+        "Knowledge of target microcontroller silicon revision",
+        "Debug probe and glitching equipment",
+        "Physical access to ECU debug port"
+      ],
+      "detection_methods": [
+        "HSM monitoring debug port state",
+        "Tamper detection circuits",
+        "Manufacturing line verification of fuse state"
+      ]
+    },
+    {
+      "id": "ecu-can-stack-fuzzing",
+      "name": "ECU CAN Protocol Stack Fuzzing Attack",
+      "target_component": "ECU",
+      "attack_vector": "Sending malformed CAN frames to trigger crashes or unexpected behavior in ECU communication stack",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "ECU crash, reset, or degraded mode entry \u2014 potentially causing loss of vehicle function or safety-critical failure",
+      "known_mitigations": [
+        "Implement robust input validation on all CAN message handlers",
+        "Use AUTOSAR defensive programming patterns",
+        "Test with automotive protocol fuzzers during development"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3"
+      ],
+      "description": "An attacker connects to the CAN bus and sends thousands of malformed frames with invalid DLC values, unexpected IDs, and corrupted payloads to every reachable ECU. The goal is to trigger unhandled exceptions, buffer overflows, or assertion failures in the CAN protocol stack. ECUs with poorly implemented AUTOSAR COM stacks or custom parsing code may crash and enter a safe-state or reset loop, causing denial of service for critical vehicle functions. Fuzzing tools like CANalyzer scripts or custom hardware automate this process.",
+      "prerequisites": [
+        "Physical access to CAN bus via OBD-II or splice",
+        "CAN interface hardware",
+        "Fuzzing software or scripts"
+      ],
+      "detection_methods": [
+        "CAN IDS detecting abnormal frame rates and patterns",
+        "ECU reset counter monitoring",
+        "Bus-off detection and reporting"
+      ]
+    },
+    {
+      "id": "gateway-firewall-bypass",
+      "name": "Gateway CAN Firewall Rule Bypass",
+      "target_component": "Gateway",
+      "attack_vector": "Crafting CAN messages that exploit incomplete firewall rules to pass unauthorized frames between network segments",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Attacker on low-security bus segment reaches safety-critical ECUs on isolated high-security segment",
+      "known_mitigations": [
+        "Implement default-deny firewall policy on gateway",
+        "Validate message content not just CAN IDs",
+        "Regular review and testing of gateway filter rules against vehicle DBC files"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2",
+        "A5.A.3"
+      ],
+      "description": "A central gateway ECU routes CAN messages between vehicle network segments (powertrain, chassis, infotainment, diagnostics). The firewall rules typically filter by CAN ID, allowing only expected messages to cross segment boundaries. An attacker exploits gaps in these rules \u2014 IDs that are valid on both segments, newly added ECUs whose IDs were not included in rules, or CAN-FD frames that bypass classic CAN filters. Successful bypass allows injection of spoofed messages onto safety-critical bus segments from the less-protected infotainment network.",
+      "prerequisites": [
+        "Access to any CAN bus segment",
+        "Knowledge of gateway routing table or DBC files",
+        "CAN frame injection capability"
+      ],
+      "detection_methods": [
+        "Gateway logging of filtered and forwarded frames",
+        "Anomaly detection on cross-segment traffic volume",
+        "Periodic rule coverage analysis against DBC"
+      ]
+    },
+    {
+      "id": "gateway-dos-resource-exhaustion",
+      "name": "Gateway Resource Exhaustion Denial of Service",
+      "target_component": "Gateway",
+      "attack_vector": "Flooding the gateway with high volumes of legitimate-looking CAN traffic to exhaust processing resources",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Gateway unable to forward legitimate messages, causing communication blackout between vehicle network segments",
+      "known_mitigations": [
+        "Implement rate limiting per source and per CAN ID",
+        "Use hardware-accelerated message filtering",
+        "Design gateway with sufficient processing headroom for worst-case bus load"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3"
+      ],
+      "description": "An attacker floods one or more CAN bus segments with high-priority messages, forcing the gateway to process and filter each frame. Since CAN arbitration is priority-based, high-priority flood frames win bus access over legitimate lower-priority messages. The gateway's CPU becomes saturated attempting to filter the flood, delaying or dropping forwarding of legitimate cross-segment messages. This can cause timeout errors in ECU-to-ECU communication, triggering diagnostic trouble codes and potentially forcing safety-critical systems into degraded mode.",
+      "prerequisites": [
+        "Access to any CAN bus segment",
+        "CAN interface capable of sustained high-rate transmission"
+      ],
+      "detection_methods": [
+        "Bus load monitoring exceeding threshold alerts",
+        "Gateway CPU utilization monitoring",
+        "ECU communication timeout tracking"
+      ]
+    },
+    {
+      "id": "gateway-routing-table-manipulation",
+      "name": "Gateway Routing Table Manipulation",
+      "target_component": "Gateway",
+      "attack_vector": "Exploiting diagnostic services to modify gateway message routing configuration, redirecting or blocking traffic flows",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Vehicle CAN routing altered \u2014 messages misrouted, dropped, or redirected to attacker-controlled ECU for interception",
+      "known_mitigations": [
+        "Store routing table in write-protected flash with HSM-verified integrity",
+        "Require backend authorization for any routing configuration changes",
+        "Implement routing table integrity check on every gateway boot"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2",
+        "A5.A.7"
+      ],
+      "description": "An attacker uses UDS WriteDataByIdentifier or routine control services on the gateway ECU to modify its internal routing table. This changes which CAN messages are forwarded between segments, potentially blocking safety-critical traffic or redirecting sensor data to a compromised ECU for modification before forwarding. Many gateways store routing configurations in NVM that can be updated through standard diagnostic services with only seed-key authentication protecting the write operation.",
+      "prerequisites": [
+        "Diagnostic access to gateway ECU",
+        "Knowledge of routing table DIDs",
+        "Bypassed or compromised security access"
+      ],
+      "detection_methods": [
+        "Routing table hash verification on boot",
+        "Backend configuration audit logs",
+        "ECU communication pattern monitoring for route changes"
+      ]
+    },
+    {
+      "id": "gateway-ethernet-vlan-hopping",
+      "name": "Gateway Ethernet VLAN Hopping",
+      "target_component": "Gateway",
+      "attack_vector": "Double-tagged 802.1Q frames or switch spoofing to bypass VLAN segmentation on automotive Ethernet gateway",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Attacker jumps from infotainment VLAN to safety-critical ADAS VLAN, bypassing network segmentation",
+      "known_mitigations": [
+        "Disable trunk ports on all ECU-facing interfaces",
+        "Implement 802.1X port-based authentication",
+        "Use MACsec for link-layer encryption and authentication on inter-switch links"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2"
+      ],
+      "description": "Automotive Ethernet networks increasingly use VLAN segmentation to isolate domains (infotainment, ADAS, powertrain). An attacker connected to the infotainment VLAN crafts double-tagged 802.1Q frames. The gateway switch strips the outer tag and forwards the inner-tagged frame to the target VLAN. This classic IT network attack applies directly to automotive Ethernet when switches are misconfigured with native VLAN trunking enabled on access ports. Once on the target VLAN, the attacker can inject or sniff ADAS sensor data.",
+      "prerequisites": [
+        "Access to an automotive Ethernet port",
+        "Knowledge of VLAN topology",
+        "Ability to craft custom Ethernet frames"
+      ],
+      "detection_methods": [
+        "Switch port security violation alerts",
+        "Double-tagged frame detection rules",
+        "VLAN traffic anomaly monitoring"
+      ]
+    },
+    {
+      "id": "gateway-someip-service-hijack",
+      "name": "Gateway SOME/IP Service Discovery Hijack",
+      "target_component": "Gateway",
+      "attack_vector": "Sending fraudulent SOME/IP-SD offer messages to redirect service consumers to attacker-controlled endpoint",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Service consumers connect to attacker instead of legitimate service provider, enabling data interception or response manipulation",
+      "known_mitigations": [
+        "Implement SOME/IP service authentication",
+        "Use static service endpoint configuration for safety-critical services",
+        "Deploy SOME/IP firewall rules on gateway filtering SD messages"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2",
+        "A5.A.5"
+      ],
+      "description": "SOME/IP Service Discovery (SD) uses multicast to advertise available services on automotive Ethernet. An attacker on the network sends forged SD Offer messages claiming to provide a service (e.g., camera image processing) with higher priority or faster response time than the legitimate provider. Consumer ECUs connect to the attacker's endpoint instead. The attacker can then intercept requests, modify responses, or inject malicious data. This is a direct analogue of ARP spoofing adapted to the automotive service-oriented architecture.",
+      "prerequisites": [
+        "Access to automotive Ethernet segment",
+        "Knowledge of SOME/IP service IDs and configurations",
+        "SOME/IP-capable software stack"
+      ],
+      "detection_methods": [
+        "SOME/IP-SD message authentication checks",
+        "Service endpoint consistency monitoring",
+        "Duplicate service offer detection"
+      ]
+    },
+    {
+      "id": "gateway-firmware-rollback",
+      "name": "Gateway Firmware Rollback Attack",
+      "target_component": "Gateway",
+      "attack_vector": "Downgrading gateway firmware to older version with known vulnerabilities through diagnostic reprogramming",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Gateway security features reverted \u2014 firewall rules, SecOC support, or IDS capabilities removed, exposing entire vehicle network",
+      "known_mitigations": [
+        "Hardware anti-rollback counter in eFuse/RPMB",
+        "Backend authorization required for gateway reprogramming",
+        "Post-flash verification reporting to OEM cloud"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6"
+      ],
+      "description": "The gateway ECU is the critical security enforcement point in the vehicle network. An attacker uses diagnostic services to flash an older gateway firmware version that lacks recently added security features such as CAN IDS, SecOC enforcement, or updated firewall rules. If the gateway uses software-based version tracking rather than hardware monotonic counters, the downgrade succeeds. The older firmware processes all traffic without modern security checks, opening the entire vehicle network to attacks that were previously mitigated.",
+      "prerequisites": [
+        "Captured copy of older gateway firmware",
+        "Diagnostic programming access",
+        "Bypassed security access or stolen credentials"
+      ],
+      "detection_methods": [
+        "Backend firmware version tracking discrepancy alerts",
+        "Hardware anti-rollback counter verification",
+        "Remote attestation of gateway security feature set"
+      ]
+    },
+    {
+      "id": "gateway-can-ethernet-translation-exploit",
+      "name": "Gateway CAN-to-Ethernet Translation Exploit",
+      "target_component": "Gateway",
+      "attack_vector": "Exploiting protocol translation logic in gateway to inject malformed data during CAN-to-Ethernet or Ethernet-to-CAN conversion",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Data corruption during protocol translation causing ECU misinterpretation of sensor values or control commands",
+      "known_mitigations": [
+        "Validate data semantics during translation, not just format",
+        "Implement end-to-end integrity checks (E2E protection) across translation boundary",
+        "Fuzz-test all translation paths during development"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3"
+      ],
+      "description": "Modern vehicles use gateways that translate messages between CAN and automotive Ethernet domains. The translation logic must parse CAN signals, repack them into SOME/IP payloads, and vice versa. An attacker crafts CAN messages with valid IDs but unusual signal combinations that exploit parsing bugs in the translation layer. For example, a CAN message with a signal value at the maximum range boundary might overflow when converted to a differently-sized Ethernet payload field. The corrupted translated message reaches the destination ECU with incorrect values.",
+      "prerequisites": [
+        "Knowledge of gateway signal translation mappings",
+        "Access to CAN bus segment feeding the gateway",
+        "Ability to analyze Ethernet output for verification"
+      ],
+      "detection_methods": [
+        "E2E protection checksum failures at receiving ECU",
+        "Signal range validation at translation boundary",
+        "Cross-domain plausibility checks"
+      ]
+    },
+    {
+      "id": "gateway-key-manager-compromise",
+      "name": "Gateway SecOC Key Manager Compromise",
+      "target_component": "Gateway",
+      "attack_vector": "Attacking the key management function hosted on gateway ECU to extract or manipulate SecOC keys for all ECUs",
+      "stride_category": "IE",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "All SecOC keys compromised, enabling message forgery and authentication bypass across entire vehicle network",
+      "known_mitigations": [
+        "Isolate key manager in dedicated HSM partition",
+        "Implement key hierarchy so compromise of distribution keys does not expose master keys",
+        "Use per-ECU derived keys to limit blast radius"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.1",
+        "A5.A.2"
+      ],
+      "description": "The gateway ECU often hosts the SecOC Key Manager function responsible for distributing symmetric keys to all ECUs on the bus. An attacker who compromises the key manager through firmware exploitation or physical attack on the gateway HSM can extract the key distribution material. With these keys, the attacker can forge authenticated CAN messages for any ECU, bypass SecOC verification, and inject arbitrary commands on any bus segment. The centralized key management design makes the gateway a high-value single point of failure for network authentication.",
+      "prerequisites": [
+        "Physical access to gateway ECU",
+        "Firmware exploitation capability or HSM attack tools",
+        "Knowledge of key distribution protocol"
+      ],
+      "detection_methods": [
+        "HSM tamper detection alerts",
+        "Anomalous key distribution request monitoring",
+        "Periodic key usage audit against expected patterns"
+      ]
+    },
+    {
+      "id": "gateway-ids-evasion",
+      "name": "Gateway IDS Evasion via Slow-Rate Injection",
+      "target_component": "Gateway",
+      "attack_vector": "Injecting malicious CAN frames at rates below IDS detection thresholds to avoid triggering anomaly alerts",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Malicious messages delivered to target ECUs without detection, bypassing gateway intrusion detection system",
+      "known_mitigations": [
+        "Implement content-based IDS in addition to rate-based detection",
+        "Use SecOC authentication to detect unauthorized messages regardless of rate",
+        "Correlate IDS alerts across multiple detection points"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3"
+      ],
+      "description": "Gateway-based CAN intrusion detection systems typically monitor for anomalous message rates, new CAN IDs, or statistical deviations in bus traffic patterns. An attacker evades these checks by injecting malicious frames at rates that match expected traffic patterns \u2014 for example, inserting one spoofed steering angle message per normal transmission cycle. By staying within statistical norms, the injected frames blend with legitimate traffic. This requires prior observation of normal bus traffic patterns to calibrate injection timing and rate.",
+      "prerequisites": [
+        "Prior CAN bus traffic capture and analysis",
+        "Knowledge of IDS detection thresholds",
+        "Precise timing control for frame injection"
+      ],
+      "detection_methods": [
+        "Message authentication via SecOC",
+        "Physical layer fingerprinting detecting multiple senders for same ID",
+        "Signal plausibility checks against vehicle dynamics model"
+      ]
+    },
+    {
+      "id": "diag-security-access-bruteforce",
+      "name": "UDS Security Access Seed-Key Brute Force",
+      "target_component": "Diagnostics",
+      "attack_vector": "Brute-forcing or reverse-engineering the UDS 0x27 security access seed-key algorithm to gain elevated diagnostic privileges",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Full authenticated diagnostic access to ECU, enabling firmware flashing, calibration changes, and DTC clearing",
+      "known_mitigations": [
+        "Migrate from 0x27 seed-key to 0x29 certificate-based authentication",
+        "Implement attempt limiting with exponential backoff",
+        "Use server-side key derivation requiring online backend verification"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.4"
+      ],
+      "description": "UDS Security Access (service 0x27) uses a challenge-response mechanism where the ECU sends a seed and the tester must respond with the correct key. Many OEMs implement the key derivation as a fixed algorithm (XOR, shift, or lookup table) seeded with a constant. An attacker extracts the algorithm through firmware reverse engineering and implements it in a tool, gaining access to all ECUs of that model. Some implementations have no attempt counter, allowing unlimited brute-force attempts.",
+      "prerequisites": [
+        "Firmware extraction of target ECU",
+        "Reverse engineering of seed-key algorithm",
+        "Diagnostic access via OBD-II"
+      ],
+      "detection_methods": [
+        "Failed authentication attempt counting and logging",
+        "Backend alerting on unusual diagnostic session patterns",
+        "Rate limiting on security access requests"
+      ]
+    },
+    {
+      "id": "diag-session-hijack",
+      "name": "UDS Diagnostic Session Hijacking",
+      "target_component": "Diagnostics",
+      "attack_vector": "Injecting UDS responses to hijack an active diagnostic session between a legitimate tester and ECU",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Attacker takes over authenticated diagnostic session, inheriting elevated privileges without authentication",
+      "known_mitigations": [
+        "Implement session binding with cryptographic tokens",
+        "Use TLS for DoIP diagnostic transport",
+        "Validate source address consistency throughout session"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.4"
+      ],
+      "description": "UDS diagnostic sessions on CAN have no session binding \u2014 once an extended or programming session is established, any node on the bus can send requests. An attacker monitors bus traffic for a legitimate tester opening an authenticated session, then injects their own requests using the same source address format. The ECU processes these requests within the active session context, granting the attacker access to protected services. This is particularly effective with DoIP where multiple clients can connect to the same ECU endpoint.",
+      "prerequisites": [
+        "Access to same CAN bus or DoIP network as diagnostic tester",
+        "Timing alignment with legitimate session establishment",
+        "Knowledge of UDS service IDs and addressing"
+      ],
+      "detection_methods": [
+        "Session source address monitoring for inconsistencies",
+        "Detecting overlapping session requests from different physical sources",
+        "DoIP connection tracking with TLS client certificates"
+      ]
+    },
+    {
+      "id": "diag-routine-control-abuse",
+      "name": "UDS Routine Control Exploitation",
+      "target_component": "Diagnostics",
+      "attack_vector": "Invoking undocumented or manufacturer-specific UDS Routine Control (0x31) routines to access hidden ECU functionality",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Execution of hidden diagnostic routines enabling production-mode features, test functions, or debug capabilities in field vehicles",
+      "known_mitigations": [
+        "Remove or disable development/production routines in release firmware",
+        "Require backend authorization for all routine control invocations",
+        "Implement routine access control lists per security access level"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.4",
+        "A5.A.7"
+      ],
+      "description": "ECU firmware often contains diagnostic routines intended only for manufacturing or development use \u2014 actuator tests, memory read/write, sensor calibration bypass, or production end-of-line configuration. These routines are accessible via UDS Routine Control (0x31) with specific routine identifiers. An attacker who discovers these identifiers through firmware analysis can invoke them in field vehicles. Some routines bypass safety checks or enable direct actuator control that could cause physical harm if misused.",
+      "prerequisites": [
+        "Firmware reverse engineering to identify routine IDs",
+        "Appropriate security access level",
+        "Knowledge of routine parameter formats"
+      ],
+      "detection_methods": [
+        "Routine invocation logging with backend reporting",
+        "Whitelist of allowed routines per vehicle lifecycle state",
+        "Anomaly detection for unusual routine calls"
+      ]
+    },
+    {
+      "id": "diag-doip-mitm",
+      "name": "DoIP Man-in-the-Middle Attack",
+      "target_component": "Diagnostics",
+      "attack_vector": "ARP spoofing on workshop Ethernet to intercept DoIP diagnostic traffic between tester and vehicle gateway",
+      "stride_category": "IT",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Complete interception and modification of diagnostic communication, enabling session hijacking and data manipulation",
+      "known_mitigations": [
+        "Implement TLS 1.3 for DoIP connections per ISO 13400-2 Amendment",
+        "Use static ARP entries or 802.1X on workshop network",
+        "Implement certificate-based mutual authentication"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.4",
+        "A5.A.5"
+      ],
+      "description": "Diagnostics over IP (DoIP) per ISO 13400 operates over standard Ethernet and TCP/IP. In workshop environments, the network between the diagnostic tester and the vehicle is often a simple Ethernet switch without security controls. An attacker on the same network segment performs ARP spoofing to position themselves between the tester and vehicle gateway. All diagnostic traffic flows through the attacker, who can capture security access credentials, modify diagnostic requests, or inject additional commands into the session.",
+      "prerequisites": [
+        "Access to workshop Ethernet network",
+        "ARP spoofing tools",
+        "DoIP protocol parser for real-time manipulation"
+      ],
+      "detection_methods": [
+        "ARP table monitoring for duplicate entries",
+        "DoIP connection integrity checks",
+        "Network traffic anomaly detection in workshop"
+      ]
+    },
+    {
+      "id": "diag-obd-connector-attack",
+      "name": "OBD-II Connector Physical Attack Vector",
+      "target_component": "Diagnostics",
+      "attack_vector": "Plugging malicious device into freely accessible OBD-II connector to gain persistent CAN bus access",
+      "stride_category": "TE",
+      "feasibility": {
+        "elapsed_time": "minutes",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "physical"
+      },
+      "impact": "Persistent covert access to vehicle CAN bus enabling ongoing message injection, data exfiltration, or vehicle tracking",
+      "known_mitigations": [
+        "Implement gateway filtering between OBD-II port and rest of vehicle network",
+        "Add authentication requirement for OBD-II access beyond emissions data",
+        "Use physical tamper detection on OBD-II connector"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.4",
+        "A5.B.3"
+      ],
+      "description": "The OBD-II connector, mandated by emissions regulations in accessible locations, provides direct CAN bus access. An attacker inserts a small, concealed device (commercially available CAN interfaces with cellular or Bluetooth connectivity) into the OBD-II port. The device remains hidden under the dashboard and provides remote access to the vehicle CAN bus. Consumer-grade OBD-II dongles modified with custom firmware can perform this attack. R155 recognizes this as a threat vector since the connector cannot be removed but must be protected.",
+      "prerequisites": [
+        "Brief physical access to vehicle cabin",
+        "OBD-II attack dongle (commercially available hardware)"
+      ],
+      "detection_methods": [
+        "Periodic OBD-II port physical inspection",
+        "Gateway detecting unexpected traffic patterns from diagnostic port",
+        "Voltage monitoring for additional load on OBD-II power pins"
+      ]
+    },
+    {
+      "id": "diag-dtc-clearing-evidence-destruction",
+      "name": "DTC Clearing for Evidence Destruction",
+      "target_component": "Diagnostics",
+      "attack_vector": "Using UDS ClearDiagnosticInformation (0x14) to erase diagnostic trouble codes that record evidence of tampering or attack",
+      "stride_category": "R",
+      "feasibility": {
+        "elapsed_time": "minutes",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Forensic evidence of cyberattack or tampering destroyed, preventing investigation and accountability",
+      "known_mitigations": [
+        "Log DTC clearing events to tamper-evident storage with timestamp",
+        "Require authenticated access for DTC clearing",
+        "Mirror critical DTCs to backend cloud before allowing local clear"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.4",
+        "A5.A.7"
+      ],
+      "description": "After performing any attack on the vehicle, the attacker uses standard UDS service 0x14 (ClearDiagnosticInformation) to erase all diagnostic trouble codes from every ECU. Many ECUs accept this service without authentication in the default session. DTCs often contain evidence of attacks \u2014 communication errors, checksum failures, watchdog resets, or security access violations. Clearing these codes removes the forensic trail. This anti-forensics technique is trivial to execute with any commercial or open-source OBD-II diagnostic tool.",
+      "prerequisites": [
+        "Any diagnostic access to vehicle",
+        "Standard OBD-II tool"
+      ],
+      "detection_methods": [
+        "Tamper-evident DTC clear log",
+        "Backend DTC mirror detecting cleared codes",
+        "DTC clear timestamp correlation with other security events"
+      ]
+    },
+    {
+      "id": "diag-firmware-readout",
+      "name": "UDS Firmware Readout via ReadMemoryByAddress",
+      "target_component": "Diagnostics",
+      "attack_vector": "Using UDS ReadMemoryByAddress (0x23) to extract firmware from ECU memory through the diagnostic interface",
+      "stride_category": "I",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Firmware extracted without physical access, enabling vulnerability analysis and key extraction for the entire model fleet",
+      "known_mitigations": [
+        "Restrict ReadMemoryByAddress to development builds only",
+        "Require highest security access level with backend authorization",
+        "Return encrypted memory contents that require OEM tools to decrypt"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.1",
+        "A5.A.4"
+      ],
+      "description": "UDS service 0x23 (ReadMemoryByAddress) allows reading arbitrary memory regions from ECU RAM and flash. An attacker who has bypassed security access can read the entire firmware image through the diagnostic interface, block by block. This is slower than JTAG extraction but requires no physical access to the ECU PCB \u2014 only connection to the OBD-II port. The extracted firmware is then analyzed for cryptographic keys, authentication algorithms, and exploitable vulnerabilities. Some ECUs allow 0x23 access with low security access levels.",
+      "prerequisites": [
+        "Diagnostic access via OBD-II",
+        "Security access authentication (low level may suffice)",
+        "Memory map knowledge or brute-force address scanning"
+      ],
+      "detection_methods": [
+        "Monitoring for sequential memory read patterns",
+        "Alerting on large-volume ReadMemoryByAddress requests",
+        "Backend logging of security access sessions with service usage"
+      ]
+    },
+    {
+      "id": "diag-reprogramming-unauthorized",
+      "name": "Unauthorized ECU Reprogramming via Diagnostics",
+      "target_component": "Diagnostics",
+      "attack_vector": "Using UDS RequestDownload (0x34) and TransferData (0x36) to flash modified firmware onto ECU through diagnostic interface",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Modified firmware installed on production ECU, enabling persistent backdoor, function manipulation, or safety system defeat",
+      "known_mitigations": [
+        "Implement firmware signature verification in bootloader before accepting transfer",
+        "Require online backend authorization token for programming session",
+        "Use hardware anti-rollback counters verified during flashing"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.4",
+        "A5.A.6"
+      ],
+      "description": "An attacker uses the standard UDS programming sequence (DiagnosticSessionControl 0x10 to programming session, SecurityAccess 0x27, RequestDownload 0x34, TransferData 0x36, RequestTransferExit 0x37) to flash modified firmware onto an ECU via the OBD-II port. If the bootloader does not verify firmware signatures or uses a weak verification scheme, the modified firmware is accepted and installed. The attacker's firmware can contain backdoors, disable safety features, or modify vehicle behavior while maintaining the appearance of normal operation.",
+      "prerequisites": [
+        "Modified firmware image prepared",
+        "Security access credentials obtained",
+        "Knowledge of ECU programming protocol specifics"
+      ],
+      "detection_methods": [
+        "Firmware signature verification failure alerts",
+        "Backend tracking of programming session metadata",
+        "Post-flash integrity attestation to OEM cloud"
+      ]
+    },
+    {
+      "id": "diag-uds-amplification",
+      "name": "UDS Response Amplification Attack",
+      "target_component": "Diagnostics",
+      "attack_vector": "Sending small UDS requests that generate large responses to amplify bus traffic and deny service to other ECUs",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "CAN bus congestion from amplified diagnostic responses, causing communication delays for safety-critical messages",
+      "known_mitigations": [
+        "Rate-limit diagnostic responses at gateway level",
+        "Restrict ReadDataByIdentifier to essential DIDs per session type",
+        "Implement diagnostic session timeout with automatic session end"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3",
+        "A5.A.4"
+      ],
+      "description": "An attacker sends compact UDS requests such as ReadDataByIdentifier (0x22) for DIDs that return large datasets, or ReadDTCInformation (0x19) that returns extensive freeze frame data. Each 8-byte CAN request generates multi-frame ISO-TP responses consuming significant bus bandwidth. By targeting multiple ECUs simultaneously, the attacker amplifies a small number of request frames into heavy response traffic, saturating the CAN bus and delaying legitimate high-priority messages from ADAS, braking, or steering ECUs.",
+      "prerequisites": [
+        "Knowledge of DIDs that return large datasets",
+        "Access to vehicle CAN bus",
+        "Multiple target ECUs for amplification"
+      ],
+      "detection_methods": [
+        "Monitoring diagnostic response traffic volume",
+        "Rate-based anomaly detection on ISO-TP multi-frame sequences",
+        "Gateway-level diagnostic traffic shaping"
+      ]
+    },
+    {
+      "id": "ota-package-tampering",
+      "name": "OTA Update Package Tampering in Transit",
+      "target_component": "OTA",
+      "attack_vector": "Intercepting and modifying firmware update packages during download from CDN to vehicle telematics unit",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Modified firmware installed on vehicle ECUs, enabling persistent backdoor or safety function manipulation",
+      "known_mitigations": [
+        "Cryptographic signature verification independent of transport layer",
+        "Use Ed25519 or ECDSA signatures on all update packages",
+        "Verify signature chain rooted in HSM-stored OEM CA"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6",
+        "A5.B.4"
+      ],
+      "description": "An attacker intercepts OTA update traffic between the CDN and vehicle TCU, either through DNS hijacking, rogue Wi-Fi access point, or compromised cellular infrastructure. The attacker modifies the firmware binary within the update package before forwarding it to the vehicle. If the vehicle relies solely on TLS for integrity (rather than independent cryptographic signatures), the modified firmware is accepted. R156 explicitly requires signature verification separate from transport security to prevent this class of attack.",
+      "prerequisites": [
+        "Network position between CDN and vehicle",
+        "Knowledge of update package format",
+        "Ability to re-sign or strip signature verification"
+      ],
+      "detection_methods": [
+        "Signature verification failure logging",
+        "Package hash comparison against backend manifest",
+        "TLS certificate pinning violation alerts"
+      ]
+    },
+    {
+      "id": "ota-rollback-counter-bypass",
+      "name": "OTA Anti-Rollback Counter Bypass",
+      "target_component": "OTA",
+      "attack_vector": "Manipulating software-based version counters to allow installation of older vulnerable firmware via OTA mechanism",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Older firmware with known vulnerabilities installed, reversing security patches across one or more ECUs",
+      "known_mitigations": [
+        "Store anti-rollback counters in hardware eFuse or RPMB",
+        "Backend version tracking with minimum version enforcement",
+        "Dual verification of version at TCU and target ECU"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6"
+      ],
+      "description": "An attacker exploits OTA systems that store firmware version counters in software-writable NVM rather than hardware-enforced monotonic counters. By first modifying the version counter through diagnostic access or firmware exploitation, the attacker resets the minimum accepted version. They then trigger an OTA update with an older firmware version containing known vulnerabilities. The OTA system accepts the downgrade because the manipulated counter indicates compatibility. Hardware-based eFuse counters prevent this by being physically irreversible.",
+      "prerequisites": [
+        "Access to version counter storage mechanism",
+        "Copy of older firmware version",
+        "Understanding of OTA version validation logic"
+      ],
+      "detection_methods": [
+        "Backend version counter consistency checks",
+        "Hardware counter verification during update",
+        "Fleet-wide version anomaly detection"
+      ]
+    },
+    {
+      "id": "ota-cdn-compromise",
+      "name": "OTA CDN Server Compromise",
+      "target_component": "OTA",
+      "attack_vector": "Compromising OEM update distribution infrastructure to serve malicious firmware packages to entire vehicle fleet",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "months",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Fleet-wide compromise \u2014 malicious firmware distributed to all vehicles requesting updates",
+      "known_mitigations": [
+        "Offline root signing key with ceremony-based access",
+        "Dual-signature requirement from independent teams",
+        "Binary transparency log for all published packages"
+      ],
+      "r155_annex5_refs": [
+        "A5.D.1",
+        "A5.A.6"
+      ],
+      "description": "An attacker compromises the OEM's software update distribution infrastructure \u2014 CDN servers, build pipeline, or package repository. By injecting malicious firmware into the distribution chain, every vehicle that checks for updates receives the compromised package. The scale of impact is fleet-wide. Mitigations require that signing keys are never accessible from the distribution infrastructure, using an air-gapped signing ceremony with multi-party authorization. Binary transparency logs provide post-compromise detection by allowing independent verification of package history.",
+      "prerequisites": [
+        "Access to OEM update infrastructure",
+        "Understanding of build and release pipeline",
+        "Ability to maintain persistent access"
+      ],
+      "detection_methods": [
+        "Binary transparency log auditing",
+        "Independent build reproducibility verification",
+        "Anomalous package metadata detection"
+      ]
+    },
+    {
+      "id": "ota-delta-patch-injection",
+      "name": "OTA Delta Patch Manipulation",
+      "target_component": "OTA",
+      "attack_vector": "Crafting malicious delta patches that produce valid post-patch hashes but contain attacker-controlled code",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Backdoored firmware installed through apparently valid delta update, bypassing binary-level signature checks",
+      "known_mitigations": [
+        "Sign both the delta patch and the expected post-patch full image hash",
+        "Verify complete image hash after patch application before activation",
+        "Use A/B partitions to validate before switching"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6"
+      ],
+      "description": "Delta OTA updates transmit only the differences between firmware versions to reduce bandwidth. An attacker who knows the current and target firmware versions crafts a malicious delta patch. When applied to the current version, this patch produces a different binary than intended but potentially passes weak verification that only checks the delta signature, not the resulting full image. Proper mitigation requires signing the expected hash of the complete post-patch image and verifying after application.",
+      "prerequisites": [
+        "Knowledge of current and target firmware versions",
+        "Understanding of delta algorithm (bsdiff, etc.)",
+        "Ability to inject modified delta into update channel"
+      ],
+      "detection_methods": [
+        "Post-patch full image hash verification",
+        "A/B partition comparison",
+        "Backend hash mismatch reporting"
+      ]
+    },
+    {
+      "id": "ota-consent-bypass",
+      "name": "OTA Update Consent Mechanism Bypass",
+      "target_component": "OTA",
+      "attack_vector": "Triggering forced firmware updates without user consent by exploiting the update scheduling mechanism",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Firmware updates applied while vehicle is in use, potentially causing unexpected behavior during driving",
+      "known_mitigations": [
+        "Hardware interlock preventing updates when vehicle is in motion",
+        "Multi-factor consent requiring both HMI confirmation and ignition-off state",
+        "Backend rate limiting on forced update commands"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6"
+      ],
+      "description": "R156 requires that OTA updates obtain user consent before installation. An attacker who gains access to the OTA management backend or spoofs update commands can trigger forced updates that bypass the consent mechanism. If the update occurs while the vehicle is in motion and causes an ECU reset or temporary function loss, it creates a safety hazard. The attack exploits the distinction between safety-critical updates (which OEMs may force-push) and normal updates (which require consent).",
+      "prerequisites": [
+        "Access to OTA management backend or command channel",
+        "Knowledge of forced update protocol",
+        "Ability to spoof update authority"
+      ],
+      "detection_methods": [
+        "HMI consent confirmation logging",
+        "Vehicle state verification before update initiation",
+        "Update command authentication and authorization audit"
+      ]
+    },
+    {
+      "id": "ota-metadata-manipulation",
+      "name": "OTA Update Metadata Spoofing",
+      "target_component": "OTA",
+      "attack_vector": "Modifying update metadata to misdirect firmware intended for one ECU type to a different ECU",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Wrong firmware flashed to ECU causing malfunction, boot failure, or safety system degradation",
+      "known_mitigations": [
+        "Include target ECU hardware ID in signed metadata",
+        "ECU-side hardware compatibility verification before installation",
+        "A/B partitioning with automatic rollback on boot failure"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6"
+      ],
+      "description": "OTA update packages contain metadata specifying the target ECU type, hardware revision, and software version compatibility. An attacker modifies this metadata to redirect firmware meant for a non-safety ECU (e.g., infotainment) to a safety-critical ECU (e.g., braking controller). If metadata is not covered by the cryptographic signature or the ECU does not independently verify hardware compatibility, incorrect firmware is installed. The mismatched firmware causes the ECU to malfunction or brick, requiring physical repair.",
+      "prerequisites": [
+        "Access to update metadata in transit or at rest",
+        "Knowledge of ECU type identifiers",
+        "Metadata not covered by firmware signature"
+      ],
+      "detection_methods": [
+        "ECU hardware ID cross-check during installation",
+        "Metadata signature verification",
+        "Boot failure detection and automatic rollback"
+      ]
+    },
+    {
+      "id": "ota-campaign-replay",
+      "name": "OTA Update Campaign Replay Attack",
+      "target_component": "OTA",
+      "attack_vector": "Replaying a previously valid update campaign to revert vehicles to older firmware versions",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Vehicles reverted to older firmware, reintroducing patched vulnerabilities across targeted portion of fleet",
+      "known_mitigations": [
+        "Include campaign timestamp and nonce in signed update manifest",
+        "Vehicle-side campaign ID tracking preventing re-execution",
+        "Backend campaign status tracking with vehicle acknowledgment"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6"
+      ],
+      "description": "An attacker captures a legitimate OTA update campaign \u2014 including the signed manifest, firmware packages, and distribution metadata \u2014 and replays it at a later time. If the update system does not track campaign identifiers or include timestamps in the signed manifest, vehicles that have since received newer updates may process the replayed campaign and revert to the older version. This is distinct from anti-rollback bypass because it exploits the campaign management layer rather than the firmware version counter.",
+      "prerequisites": [
+        "Captured previous update campaign data",
+        "Network position to serve replayed packages",
+        "Vehicles not tracking campaign uniqueness"
+      ],
+      "detection_methods": [
+        "Campaign ID deduplication at vehicle",
+        "Timestamp freshness validation",
+        "Backend campaign completion status verification"
+      ]
+    },
+    {
+      "id": "ota-partial-update-bricking",
+      "name": "OTA Partial Update Interruption Attack",
+      "target_component": "OTA",
+      "attack_vector": "Deliberately interrupting OTA update during critical write phase to leave ECU in non-bootable state",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "ECU bricked requiring physical dealer visit for recovery, causing fleet-wide service disruption if coordinated",
+      "known_mitigations": [
+        "A/B partition scheme with atomic switchover",
+        "Failsafe bootloader with recovery mode",
+        "Power-loss-resilient update protocol with write verification"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6"
+      ],
+      "description": "An attacker disrupts an OTA update during the firmware write phase by jamming cellular connectivity, triggering power interruption, or sending abort commands. ECUs without A/B partitioning that write directly to the active partition become non-bootable if the write is incomplete. A coordinated attack timing interruptions across many vehicles during a major campaign could cause widespread fleet disruption. The failsafe bootloader must be independently protected and capable of recovery or rollback.",
+      "prerequisites": [
+        "Timing knowledge of active update campaigns",
+        "Ability to disrupt connectivity or power at critical moment",
+        "Target ECUs using single-partition update scheme"
+      ],
+      "detection_methods": [
+        "Update completion status monitoring",
+        "ECU heartbeat monitoring for boot failures",
+        "Automatic recovery attempt logging"
+      ]
+    },
+    {
+      "id": "ota-certificate-pinning-bypass",
+      "name": "OTA TLS Certificate Pinning Bypass",
+      "target_component": "OTA",
+      "attack_vector": "Bypassing TLS certificate pinning on vehicle TCU to intercept and modify update download traffic",
+      "stride_category": "IT",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Update download traffic intercepted and modified, enabling firmware replacement if independent signatures are weak",
+      "known_mitigations": [
+        "Implement certificate pinning in hardware-backed secure element",
+        "Use multiple independent integrity checks beyond TLS",
+        "Pin to leaf certificate, not just CA"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.4",
+        "A5.A.6"
+      ],
+      "description": "The vehicle TCU pins the OEM CDN's TLS certificate to prevent man-in-the-middle attacks during update downloads. An attacker who can modify the TCU firmware or exploit a pinning implementation flaw bypasses this check, allowing traffic interception with a substitute certificate. If the OEM relies primarily on TLS for update integrity (rather than independent cryptographic signatures), the attacker can modify firmware packages in transit. This is why R156 requires signature verification independent of transport security.",
+      "prerequisites": [
+        "TCU firmware access or pinning implementation vulnerability",
+        "Rogue certificate authority or self-signed certificate",
+        "Network interception position"
+      ],
+      "detection_methods": [
+        "Certificate pinning violation logging to backend",
+        "Independent signature verification at ECU level",
+        "Certificate transparency monitoring"
+      ]
+    },
+    {
+      "id": "ota-selective-denial",
+      "name": "OTA Selective Update Denial for Target Vehicles",
+      "target_component": "OTA",
+      "attack_vector": "Blocking OTA security patches from reaching specific target vehicles while allowing normal update flow to others",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Target vehicles remain on vulnerable firmware while fleet appears fully patched, creating persistent attack window",
+      "known_mitigations": [
+        "Backend tracking of per-vehicle update status with alerting on stragglers",
+        "Vehicle-side periodic update check with randomized timing",
+        "Multiple update delivery paths (cellular, Wi-Fi, dealer)"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.6",
+        "A5.B.4"
+      ],
+      "description": "An attacker selectively blocks OTA security updates from reaching specific target vehicles by interfering with their cellular connectivity, DNS resolution, or CDN access. The vehicles continue operating normally but never receive critical security patches. The OEM's fleet monitoring may not flag individual vehicles that miss updates, especially if the attacker makes them appear to check in normally. This creates a persistent vulnerability window on targeted vehicles for follow-on exploitation.",
+      "prerequisites": [
+        "Knowledge of target vehicle connectivity details",
+        "Ability to selectively interfere with network access",
+        "Understanding of OTA check-in protocol"
+      ],
+      "detection_methods": [
+        "Per-vehicle update status dashboard with freshness alerts",
+        "Vehicle-side update staleness self-check",
+        "Multiple network path update delivery"
+      ]
+    },
+    {
+      "id": "v2x-message-spoofing",
+      "name": "V2X Basic Safety Message Spoofing",
+      "target_component": "V2X",
+      "attack_vector": "Broadcasting forged BSM (Basic Safety Message) or CAM (Cooperative Awareness Message) to nearby vehicles",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Receiving vehicles react to phantom vehicles \u2014 unnecessary braking, lane changes, or ADAS false activations",
+      "known_mitigations": [
+        "SCMS or EU CCMS PKI-based message signing and verification",
+        "Misbehavior detection algorithms checking physical plausibility",
+        "Cross-validation with onboard sensor data (radar, camera)"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5"
+      ],
+      "description": "An attacker uses a software-defined radio (SDR) or modified V2X onboard unit (OBU) to broadcast fabricated Basic Safety Messages on the 5.9 GHz DSRC band or C-V2X PC5 interface. The spoofed messages report phantom vehicles, false emergency events, or incorrect traffic signal phase information. Receiving vehicles with V2X-enabled ADAS may brake suddenly, change lanes, or modify speed in response to threats that do not exist. The SCMS PKI infrastructure mitigates this by requiring signed messages, but pre-PKI deployments or improperly validated signatures remain vulnerable.",
+      "prerequisites": [
+        "SDR capable of 5.9 GHz or C-V2X transceiver",
+        "V2X message encoding knowledge (SAE J2735/ETSI ITS)",
+        "Proximity to target vehicles"
+      ],
+      "detection_methods": [
+        "Message signature verification failure counting",
+        "Plausibility checks against onboard sensors",
+        "Misbehavior authority reporting"
+      ]
+    },
+    {
+      "id": "v2x-certificate-misuse",
+      "name": "V2X PKI Certificate Misuse",
+      "target_component": "V2X",
+      "attack_vector": "Using legitimately issued but misappropriated V2X pseudonym certificates to send authenticated malicious messages",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Authenticated false messages accepted by all receiving vehicles, bypassing signature verification",
+      "known_mitigations": [
+        "Certificate revocation via SCMS CRL distribution",
+        "Misbehavior detection triggering certificate revocation request",
+        "Short pseudonym certificate lifetimes with frequent rotation"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5"
+      ],
+      "description": "An attacker extracts valid V2X pseudonym certificates from a compromised OBU or obtains certificates through a corrupted enrollment process. These certificates allow sending authenticated V2X messages that pass signature verification on all receiving vehicles. Unlike unsigned spoofing, these messages are trusted by the V2X stack. The SCMS misbehavior detection system must identify the anomalous messages and revoke the compromised certificates, but the window between misuse and revocation allows damage. Short-lived pseudonym certificates limit the useful lifetime of stolen credentials.",
+      "prerequisites": [
+        "Access to valid V2X pseudonym certificates",
+        "V2X transceiver and encoding capability",
+        "Understanding of certificate lifecycle"
+      ],
+      "detection_methods": [
+        "Misbehavior detection at receiving vehicles",
+        "SCMS revocation status checking",
+        "Physical plausibility validation independent of PKI"
+      ]
+    },
+    {
+      "id": "v2x-replay-attack",
+      "name": "V2X Message Replay Attack",
+      "target_component": "V2X",
+      "attack_vector": "Recording and replaying legitimate V2X messages in a different location or time to trigger false ADAS responses",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Receiving vehicles react to stale position data \u2014 phantom vehicles, false congestion, or incorrect signal phase",
+      "known_mitigations": [
+        "Timestamp validation with tight freshness window",
+        "GPS-based plausibility checks on sender position",
+        "Sequence number tracking per sender pseudonym"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5"
+      ],
+      "description": "An attacker records valid V2X messages from a busy intersection or highway and replays them at a different location or time. The replayed messages contain valid signatures and correct format but stale position and timestamp data. If receiving vehicles do not strictly validate message freshness or cross-check reported positions against geographic plausibility, they process the replayed messages as current. This can trigger false collision warnings, unnecessary emergency braking, or incorrect traffic signal expectations.",
+      "prerequisites": [
+        "V2X receiver for message capture",
+        "V2X transmitter for replay",
+        "Recorded messages from target area"
+      ],
+      "detection_methods": [
+        "Timestamp freshness window enforcement",
+        "Position plausibility validation",
+        "Duplicate message detection by hash"
+      ]
+    },
+    {
+      "id": "v2x-dos-channel-flooding",
+      "name": "V2X Channel Flooding Denial of Service",
+      "target_component": "V2X",
+      "attack_vector": "Flooding the V2X communication channel with high-volume traffic to prevent legitimate message reception",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "V2X safety messages cannot be received, disabling cooperative safety features for vehicles in the affected area",
+      "known_mitigations": [
+        "Congestion control algorithms per SAE J2945/ETSI DCC",
+        "Receiver-side message prioritization and filtering",
+        "Redundant sensor coverage for safety-critical decisions"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5"
+      ],
+      "description": "An attacker uses a high-power transmitter on the 5.9 GHz band to flood the V2X communication channel with noise or high-rate messages. Legitimate V2X safety messages from nearby vehicles are drowned out or delayed beyond usefulness. The DSRC/C-V2X channel capacity is limited, and congestion control mechanisms cannot distinguish malicious flooding from legitimate dense traffic. Vehicles relying on V2X for intersection safety warnings lose this capability for the duration of the attack.",
+      "prerequisites": [
+        "High-power 5.9 GHz transmitter",
+        "Proximity to target area",
+        "No legal radio transmission authorization"
+      ],
+      "detection_methods": [
+        "Channel congestion monitoring beyond normal thresholds",
+        "Signal strength anomaly detection",
+        "V2X availability monitoring with fallback to sensor-only mode"
+      ]
+    },
+    {
+      "id": "v2x-position-spoofing",
+      "name": "V2X GPS Position Spoofing",
+      "target_component": "V2X",
+      "attack_vector": "Spoofing GPS signals to make vehicles report incorrect positions in V2X messages, corrupting cooperative awareness",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Vehicles broadcast incorrect positions, causing other vehicles to compute wrong relative distances and collision risks",
+      "known_mitigations": [
+        "Multi-constellation GNSS with spoofing detection",
+        "Inertial measurement unit cross-validation",
+        "V2X misbehavior detection flagging impossible position changes"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5",
+        "A5.B.3"
+      ],
+      "description": "An attacker uses a GPS simulator to broadcast spoofed GNSS signals stronger than real satellites. Target vehicles lock onto the spoofed signals and compute incorrect positions, which they then broadcast in V2X messages. Neighboring vehicles receive these incorrect position reports and may compute wrong time-to-collision or relative velocity values. GPS spoofing equipment is commercially available, and automotive GNSS receivers often lack spoofing detection. The compounding effect through V2X extends the attack's reach beyond the GPS spoofing range.",
+      "prerequisites": [
+        "GPS spoofing transmitter",
+        "Proximity to target vehicles",
+        "Knowledge of GNSS signal structure"
+      ],
+      "detection_methods": [
+        "Multi-GNSS constellation cross-validation",
+        "IMU-based position reasonableness checks",
+        "V2X position plausibility algorithms"
+      ]
+    },
+    {
+      "id": "v2x-sybil-attack",
+      "name": "V2X Sybil Attack with Multiple Identities",
+      "target_component": "V2X",
+      "attack_vector": "Creating multiple fake V2X identities from single device to simulate phantom traffic congestion or incidents",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "False congestion or incident reports cause traffic rerouting, road closures, or ADAS false activations at scale",
+      "known_mitigations": [
+        "SCMS pseudonym certificate budget limiting per device",
+        "RF fingerprinting detecting multiple identities from single source",
+        "Density plausibility checks against historical traffic patterns"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5"
+      ],
+      "description": "An attacker creates multiple simultaneous V2X identities from a single device, each broadcasting BSM/CAM messages reporting different positions and trajectories. This simulates a traffic jam, multi-vehicle incident, or road blockage that does not exist. Traffic management systems and individual vehicles responding to V2X congestion data reroute around the phantom obstruction. The SCMS limits pseudonym certificate allocation per device, but a compromised enrollment process or multiple compromised OBUs enables a large-scale Sybil attack.",
+      "prerequisites": [
+        "Multiple valid V2X pseudonym certificate sets",
+        "V2X transmission capability with identity switching",
+        "GPS simulation for multiple positions"
+      ],
+      "detection_methods": [
+        "RF direction-finding detecting co-located senders",
+        "Pseudonym certificate usage rate monitoring at SCMS",
+        "Traffic density plausibility validation"
+      ]
+    },
+    {
+      "id": "v2x-infrastructure-spoof",
+      "name": "V2X Infrastructure Message Spoofing (SPaT/MAP)",
+      "target_component": "V2X",
+      "attack_vector": "Broadcasting fake Signal Phase and Timing (SPaT) or intersection MAP messages to mislead approaching vehicles",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Vehicles proceed through intersections based on false green-light information, causing potential collisions",
+      "known_mitigations": [
+        "RSU certificate-based authentication for infrastructure messages",
+        "Cross-validation with camera-based traffic light recognition",
+        "Restrict safety-critical decisions to onboard sensor data only"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5"
+      ],
+      "description": "Traffic signal infrastructure broadcasts SPaT (Signal Phase and Timing) and MAP (intersection geometry) messages via roadside units (RSUs). An attacker spoofs these messages with a portable transmitter near an intersection, reporting green signal phase when the actual signal is red. Connected vehicles with V2X-enabled green-light-optimal-speed-advisory (GLOSA) or automated intersection management may adjust speed or proceed based on the false signal data. The RSU certificate chain should authenticate infrastructure messages, but early deployments may lack full PKI integration.",
+      "prerequisites": [
+        "V2X transmitter near target intersection",
+        "Knowledge of SPaT/MAP message format",
+        "RSU certificate or lack of receiver-side verification"
+      ],
+      "detection_methods": [
+        "Camera cross-validation of traffic signal state",
+        "RSU certificate chain verification",
+        "Infrastructure message source position validation"
+      ]
+    },
+    {
+      "id": "v2x-privacy-tracking",
+      "name": "V2X Pseudonym Linkability Tracking",
+      "target_component": "V2X",
+      "attack_vector": "Linking V2X pseudonym certificate rotations to track individual vehicles despite privacy protections",
+      "stride_category": "I",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Individual vehicle tracking despite pseudonym rotation, compromising driver privacy and enabling targeted attacks",
+      "known_mitigations": [
+        "Synchronized pseudonym change with MAC address and GNSS timing randomization",
+        "Butterfly key expansion for unlinkable certificate requests",
+        "Silent period during pseudonym transitions"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5",
+        "A5.B.3"
+      ],
+      "description": "V2X systems rotate pseudonym certificates periodically to prevent vehicle tracking. However, an attacker with distributed receivers can correlate pseudonym changes by analyzing RF fingerprints, timing patterns, trajectory continuity, and non-pseudonymous identifiers (MAC address, C-V2X Layer 2 ID) that may not change simultaneously. By linking pre-change and post-change identities, the attacker reconstructs continuous vehicle trajectories. This enables surveillance, behavioral profiling, and identifying high-value targets for physical attacks.",
+      "prerequisites": [
+        "Distributed V2X receiver network",
+        "Machine learning for trajectory correlation",
+        "RF fingerprinting capability"
+      ],
+      "detection_methods": [
+        "Pseudonym change pattern auditing",
+        "Synchronized identifier rotation verification",
+        "Privacy metric monitoring"
+      ]
+    },
+    {
+      "id": "v2x-misbehavior-authority-dos",
+      "name": "V2X Misbehavior Authority Overload",
+      "target_component": "V2X",
+      "attack_vector": "Flooding the misbehavior authority with false misbehavior reports to overwhelm its processing and revocation capacity",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Misbehavior authority unable to process legitimate reports, preventing revocation of actually misbehaving vehicles",
+      "known_mitigations": [
+        "Rate limiting misbehavior reports per reporting vehicle",
+        "Prioritizing reports from trusted infrastructure vs. vehicles",
+        "Distributed misbehavior detection reducing central authority load"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5"
+      ],
+      "description": "The V2X Security Credential Management System (SCMS) includes a misbehavior authority that processes reports from vehicles detecting anomalous V2X messages. An attacker generates high volumes of false misbehavior reports targeting legitimate vehicles, attempting to either overwhelm the authority's processing capacity or trigger false revocations of valid certificates. If the authority cannot distinguish legitimate reports from false ones at scale, actual misbehavior goes unaddressed. This undermines the trust model that the entire V2X PKI relies on.",
+      "prerequisites": [
+        "Valid V2X credentials for submitting reports",
+        "Knowledge of misbehavior report format",
+        "Multiple compromised reporting endpoints"
+      ],
+      "detection_methods": [
+        "Report source reputation scoring",
+        "Report volume anomaly detection per reporter",
+        "Cross-validation of reports from independent observers"
+      ]
+    },
+    {
+      "id": "v2x-obu-key-extraction",
+      "name": "V2X Onboard Unit Key Extraction",
+      "target_component": "V2X",
+      "attack_vector": "Physical extraction of V2X enrollment credentials and private keys from vehicle onboard unit HSM",
+      "stride_category": "IE",
+      "feasibility": {
+        "elapsed_time": "months",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Stolen V2X identity enables fully authenticated message spoofing until certificates are revoked",
+      "known_mitigations": [
+        "HSM with tamper-responsive key erasure",
+        "Certificate revocation upon tamper detection",
+        "Linkage authority architecture preventing identity reconstruction from pseudonyms"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.5",
+        "A5.A.1"
+      ],
+      "description": "An attacker physically extracts the V2X enrollment certificate and associated private keys from a vehicle's OBU hardware security module. Techniques include decapsulation, microprobing, or fault injection on the HSM silicon. Once extracted, the enrollment credential allows requesting fresh pseudonym certificates from the SCMS enrollment authority. The attacker can then operate a fully authenticated V2X transmitter that passes all signature checks. The SCMS must detect the anomalous enrollment behavior and revoke the compromised identity, but the window of vulnerability can be significant.",
+      "prerequisites": [
+        "Physical access to V2X OBU",
+        "HSM attack equipment and expertise",
+        "SCMS enrollment protocol knowledge"
+      ],
+      "detection_methods": [
+        "HSM tamper detection triggering key erasure",
+        "Enrollment authority anomaly detection",
+        "Simultaneous pseudonym usage detection"
+      ]
+    },
+    {
+      "id": "can-message-injection",
+      "name": "CAN Bus Message Injection",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "Injecting fabricated CAN frames to impersonate legitimate ECU and send false sensor data or control commands",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "False sensor readings or unauthorized control commands delivered to safety-critical ECUs",
+      "known_mitigations": [
+        "Implement SecOC message authentication on safety-critical CAN IDs",
+        "Deploy CAN IDS for injection detection",
+        "Use physical-layer sender identification"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2",
+        "A5.A.3"
+      ],
+      "description": "CAN bus lacks source authentication \u2014 any node can transmit any CAN ID. An attacker connects to the bus via OBD-II port, a splice, or a compromised ECU, and injects frames with CAN IDs belonging to safety-critical ECUs. For example, injecting wheel speed sensor CAN IDs with false values causes the ABS/ESC system to activate or deactivate incorrectly. The AUTOSAR SecOC standard adds MAC-based authentication to CAN frames, but retrofitting to legacy architectures is challenging due to limited payload space in classic CAN.",
+      "prerequisites": [
+        "Physical access to CAN bus",
+        "CAN interface adapter",
+        "Knowledge of target CAN database (DBC)"
+      ],
+      "detection_methods": [
+        "SecOC MAC verification failures",
+        "CAN IDS detecting duplicate sender for same ID",
+        "Physical-layer voltage fingerprinting"
+      ]
+    },
+    {
+      "id": "can-bus-off-attack",
+      "name": "CAN Bus-Off Targeted ECU Silencing",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "Forcing a target ECU into CAN bus-off state by deliberately causing error frames that increment the target's error counter",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Target ECU permanently disconnected from CAN bus, losing all communication with vehicle network",
+      "known_mitigations": [
+        "Bus-off recovery with random backoff timing",
+        "Physical-layer monitoring for error frame injection",
+        "Redundant communication paths for safety-critical ECUs"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3"
+      ],
+      "description": "CAN protocol requires ECUs to track transmission errors via transmit error counters. When the counter exceeds 255, the ECU enters bus-off state and disconnects from the bus. An attacker connected to the same CAN segment transmits frames simultaneously with a target ECU, causing bit-level collisions that the target interprets as transmission errors. By repeatedly winning arbitration during the target's retransmission attempts, the attacker systematically increments the target's error counter until bus-off. This selectively silences any ECU the attacker chooses.",
+      "prerequisites": [
+        "Access to same CAN bus segment as target",
+        "CAN interface with precise timing control",
+        "Knowledge of target ECU's CAN ID schedule"
+      ],
+      "detection_methods": [
+        "CAN error frame rate monitoring",
+        "ECU bus-off event logging and alerting",
+        "Physical-layer monitoring for collision patterns"
+      ]
+    },
+    {
+      "id": "can-fd-payload-overflow",
+      "name": "CAN-FD Extended Payload Parsing Vulnerability",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "Sending CAN-FD frames with maximum payload (64 bytes) to ECUs with classic CAN parsers that expect 8-byte payloads",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Buffer overflow in CAN receive handler causing ECU crash, reset, or potential code execution",
+      "known_mitigations": [
+        "Validate DLC and actual payload length in all CAN receive handlers",
+        "Enable CAN controller hardware filtering for expected DLC",
+        "Fuzz-test all ECUs with CAN-FD extended payloads"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3"
+      ],
+      "description": "CAN-FD supports payloads up to 64 bytes versus classic CAN's 8 bytes. ECUs designed for classic CAN but deployed on a CAN-FD capable bus may have receive buffers and parsing routines sized for 8-byte payloads. When a CAN-FD frame arrives with 64 bytes for a CAN ID that the ECU processes, the parser writes beyond the receive buffer boundary. This buffer overflow can crash the ECU or, in specific memory layouts, enable controlled code execution. Mixed classic/FD deployments are particularly vulnerable during architecture transitions.",
+      "prerequisites": [
+        "CAN-FD capable interface",
+        "Target ECU on same bus segment",
+        "Knowledge of ECU CAN ID acceptance filter"
+      ],
+      "detection_methods": [
+        "CAN-FD DLC anomaly monitoring",
+        "ECU crash and reset pattern detection",
+        "Receive buffer bounds checking in code review"
+      ]
+    },
+    {
+      "id": "ethernet-arp-spoofing",
+      "name": "Automotive Ethernet ARP Spoofing",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "ARP cache poisoning on automotive Ethernet to intercept or redirect traffic between ECUs",
+      "stride_category": "SI",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Traffic interception between ECUs, enabling eavesdropping on SOME/IP communications or message modification",
+      "known_mitigations": [
+        "Use static ARP tables for safety-critical ECU communication",
+        "Implement MACsec on all automotive Ethernet links",
+        "Deploy ARP inspection on automotive Ethernet switches"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2"
+      ],
+      "description": "Automotive Ethernet networks use standard ARP for address resolution. An attacker connected to the Ethernet segment sends gratuitous ARP replies associating their MAC address with the IP of a target ECU. Other ECUs update their ARP caches and send traffic intended for the target to the attacker instead. The attacker forwards the traffic to the actual destination after inspection or modification, maintaining connectivity while intercepting all communication. This is a standard IT network attack directly applicable to automotive Ethernet.",
+      "prerequisites": [
+        "Access to automotive Ethernet segment",
+        "Standard Ethernet interface and ARP spoofing tools",
+        "Knowledge of ECU IP address assignments"
+      ],
+      "detection_methods": [
+        "ARP table consistency monitoring",
+        "Duplicate MAC address detection",
+        "MACsec authentication failure alerts"
+      ]
+    },
+    {
+      "id": "ethernet-macsec-downgrade",
+      "name": "Automotive Ethernet MACsec Downgrade Attack",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "Exploiting MACsec capability negotiation to force ECU communication to fall back to unprotected Ethernet",
+      "stride_category": "IE",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "local-network"
+      },
+      "impact": "Link-layer encryption disabled, exposing all traffic on the Ethernet link to eavesdropping and manipulation",
+      "known_mitigations": [
+        "Configure MACsec as mandatory, not optional with fallback",
+        "Implement MKA with pre-shared keys or 802.1X without downgrade options",
+        "Monitor for MACsec session teardown events"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2"
+      ],
+      "description": "MACsec provides link-layer encryption and authentication for automotive Ethernet. During the MACsec Key Agreement (MKA) protocol, two ECUs negotiate security parameters. An attacker on the link exploits optional MACsec configurations that allow fallback to unprotected communication if MKA fails. By disrupting the MKA handshake through frame injection or timing manipulation, the attacker forces both endpoints to communicate without MACsec protection. This exposes all Ethernet traffic to eavesdropping, which is especially damaging for ADAS camera and sensor data streams.",
+      "prerequisites": [
+        "Physical access to Ethernet link between ECUs",
+        "MKA protocol manipulation capability",
+        "Target ECUs configured with MACsec fallback option"
+      ],
+      "detection_methods": [
+        "MACsec session establishment monitoring",
+        "MKA handshake failure alerting",
+        "Traffic encryption status verification"
+      ]
+    },
+    {
+      "id": "can-secoc-replay",
+      "name": "SecOC Freshness Value Replay Attack",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "Replaying authenticated CAN messages by exploiting weak freshness value implementations in SecOC",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Old authenticated messages accepted as current, enabling replay of valid commands or sensor data",
+      "known_mitigations": [
+        "Use monotonically increasing freshness counters with sufficient bit width",
+        "Implement trip-based freshness reset with synchronized counter initialization",
+        "Deploy freshness value manager with adequate counter distribution"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2",
+        "A5.A.3"
+      ],
+      "description": "SecOC authenticates CAN messages using truncated MACs with freshness values to prevent replay attacks. However, the freshness counter bit width on CAN is limited (typically 4-8 bits transmitted with 24+ bits managed by the freshness value manager). An attacker who captures authenticated messages and understands the freshness counter scheme can replay messages when the counter wraps around or after a freshness value reset event (e.g., ECU power cycle). Weak implementations with small counters or predictable reset behavior are vulnerable.",
+      "prerequisites": [
+        "Captured authenticated CAN messages",
+        "Knowledge of freshness value scheme",
+        "Understanding of counter wrap-around or reset conditions"
+      ],
+      "detection_methods": [
+        "Freshness counter monotonicity enforcement",
+        "Duplicate message detection within counter window",
+        "Counter desynchronization alerting"
+      ]
+    },
+    {
+      "id": "ethernet-someip-deserialization",
+      "name": "SOME/IP Deserialization Vulnerability Exploitation",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "Sending malformed SOME/IP payloads to exploit deserialization bugs in receiving ECU service implementations",
+      "stride_category": "TE",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Remote code execution or denial of service on ECU processing SOME/IP service requests",
+      "known_mitigations": [
+        "Implement strict input validation on all SOME/IP method handlers",
+        "Use generated serialization code with bounds checking from ARXML",
+        "Fuzz-test all SOME/IP interfaces during development"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3"
+      ],
+      "description": "SOME/IP uses complex serialization for structured data types in automotive service-oriented communication. ECU service implementations that manually parse SOME/IP payloads may contain deserialization vulnerabilities \u2014 integer overflows in length fields, out-of-bounds access on variable-length arrays, or type confusion in union types. An attacker sends crafted SOME/IP method requests with malformed payloads designed to trigger these parsing bugs. Since SOME/IP runs over UDP or TCP, exploitation can be achieved from any node on the automotive Ethernet network.",
+      "prerequisites": [
+        "Access to automotive Ethernet segment",
+        "Knowledge of target SOME/IP service interface definition",
+        "Fuzzing framework adapted for SOME/IP"
+      ],
+      "detection_methods": [
+        "SOME/IP payload validation at receiver",
+        "Service crash detection and restart monitoring",
+        "Anomalous SOME/IP message length alerting"
+      ]
+    },
+    {
+      "id": "can-tp-layer-fragmentation",
+      "name": "CAN ISO-TP Fragmentation Attack",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "Exploiting ISO 15765-2 transport protocol fragmentation handling to inject data or cause denial of service",
+      "stride_category": "TD",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Corrupted multi-frame messages delivered to application layer or ECU transport layer crash",
+      "known_mitigations": [
+        "Implement strict ISO-TP state machine validation",
+        "Validate sequence numbers and length consistency in consecutive frames",
+        "Apply timeouts for incomplete multi-frame transfers"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.3"
+      ],
+      "description": "ISO-TP (ISO 15765-2) provides transport layer segmentation for CAN, splitting large messages into first frames, consecutive frames, and flow control. An attacker injects forged consecutive frames into an ongoing legitimate multi-frame transfer, corrupting the reassembled message at the receiving ECU. Alternatively, the attacker sends first frames with extremely large length values to exhaust receive buffers, or sends flow control frames with zero block size and minimum separation time to overwhelm the sender. These attacks exploit the lack of authentication at the transport layer.",
+      "prerequisites": [
+        "Access to CAN bus during active ISO-TP transfers",
+        "Knowledge of active CAN ID pairs using ISO-TP",
+        "Precise timing for frame injection"
+      ],
+      "detection_methods": [
+        "ISO-TP sequence number consistency checking",
+        "Receive buffer allocation monitoring",
+        "Multi-frame transfer integrity validation"
+      ]
+    },
+    {
+      "id": "ethernet-avtp-stream-injection",
+      "name": "Automotive Ethernet AVTP Stream Injection",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "Injecting false IEEE 1722 (AVTP) media streams to deliver manipulated camera or LiDAR data to ADAS ECU",
+      "stride_category": "ST",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "local-network"
+      },
+      "impact": "ADAS ECU receives manipulated sensor data \u2014 false objects, removed obstacles, or shifted lane markings",
+      "known_mitigations": [
+        "Implement stream authentication for AVTP using IEEE 1722 security extensions",
+        "Cross-validate AVTP streams against independent sensor modalities",
+        "Use MACsec on links carrying AVTP traffic"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2",
+        "A5.B.3"
+      ],
+      "description": "IEEE 1722 Audio/Video Transport Protocol (AVTP) carries camera, LiDAR, and radar data streams over automotive Ethernet in ADAS architectures. An attacker on the Ethernet network injects a forged AVTP stream with the same stream ID as a legitimate camera feed. The ADAS ECU receives frames from both the legitimate and forged streams, potentially processing the attacker's data. By injecting modified video frames that remove pedestrians or add phantom obstacles, the attacker can manipulate the ADAS perception pipeline. Stream-level authentication is not yet widely deployed.",
+      "prerequisites": [
+        "Access to automotive Ethernet carrying AVTP streams",
+        "Knowledge of AVTP stream IDs and format",
+        "Real-time video frame manipulation capability"
+      ],
+      "detection_methods": [
+        "AVTP stream source authentication",
+        "Multi-sensor fusion consistency checks",
+        "Stream timing and sequence anomaly detection"
+      ]
+    },
+    {
+      "id": "can-network-mapping",
+      "name": "CAN Network Topology Discovery and Mapping",
+      "target_component": "CAN_Ethernet",
+      "attack_vector": "Passive eavesdropping on CAN bus to map all active ECUs, their CAN IDs, and message timing for attack planning",
+      "stride_category": "I",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Complete vehicle network map obtained \u2014 CAN IDs, timing, payloads, and ECU relationships documented for further attacks",
+      "known_mitigations": [
+        "Encrypt CAN payloads for sensitive signals",
+        "Implement bus access authentication",
+        "Deploy IDS that detects passive monitoring devices via physical layer anomalies"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.2"
+      ],
+      "description": "CAN bus is a broadcast medium \u2014 every node receives every frame. An attacker connects a passive listener to the CAN bus (via OBD-II or physical tap) and records all traffic. By analyzing CAN IDs, data patterns, timing, and correlating with known DBC database structures, the attacker builds a complete map of the vehicle network. This map identifies which ECUs are present, what signals they send, their transmission cycles, and how signals relate to physical vehicle behavior. This reconnaissance enables targeted follow-on attacks against specific ECUs or functions.",
+      "prerequisites": [
+        "Physical access to CAN bus",
+        "CAN interface in listen-only mode",
+        "Analysis software (e.g., SavvyCAN, cantools)"
+      ],
+      "detection_methods": [
+        "Physical-layer detection of additional bus loading",
+        "Voltage level anomaly from added transceiver",
+        "Periodic bus impedance measurement"
+      ]
+    },
+    {
+      "id": "tcu-cellular-mitm",
+      "name": "TCU Cellular Man-in-the-Middle via Rogue Base Station",
+      "target_component": "Telematics",
+      "attack_vector": "Deploying rogue cellular base station (IMSI catcher) to intercept TCU communication with OEM backend",
+      "stride_category": "IT",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "All TCU backend communication intercepted \u2014 OTA commands, telemetry data, remote control signals exposed",
+      "known_mitigations": [
+        "Implement application-layer encryption independent of cellular transport",
+        "Use certificate pinning for backend TLS connections",
+        "Deploy rogue base station detection in TCU modem firmware"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.4",
+        "A5.B.2"
+      ],
+      "description": "An attacker deploys a rogue LTE/5G base station (IMSI catcher) near target vehicles. The vehicle's TCU cellular modem connects to the stronger rogue signal, routing all backend communication through the attacker. If the TCU relies solely on cellular-layer encryption (which the rogue base station terminates), all traffic is exposed. The attacker can intercept OTA update commands, vehicle telemetry, remote lock/unlock signals, and geolocation data. Application-layer TLS with certificate pinning mitigates this, but many TCU implementations trust any valid TLS certificate from the cellular network.",
+      "prerequisites": [
+        "Rogue base station hardware (commercially available)",
+        "Proximity to target vehicles",
+        "Knowledge of TCU APN and backend endpoints"
+      ],
+      "detection_methods": [
+        "TCU cell tower consistency monitoring",
+        "Signal strength anomaly detection",
+        "Certificate pinning violation logging"
+      ]
+    },
+    {
+      "id": "tcu-remote-command-injection",
+      "name": "TCU Remote Command Injection via Backend API",
+      "target_component": "Telematics",
+      "attack_vector": "Exploiting vulnerabilities in OEM backend API to send unauthorized remote commands to vehicle TCU",
+      "stride_category": "TE",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Unauthorized remote vehicle control \u2014 door unlock, engine start, horn, or HVAC manipulation at scale",
+      "known_mitigations": [
+        "Implement per-vehicle command authorization with owner confirmation",
+        "Use signed command tokens with short expiry and VIN binding",
+        "Rate limit and anomaly detect backend-to-vehicle command volume"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.4",
+        "A5.B.1"
+      ],
+      "description": "OEM backend APIs provide remote vehicle management \u2014 lock/unlock, engine start, climate control, and diagnostics. An attacker who compromises the backend API (through credential theft, API vulnerability, or insider access) can send commands to any vehicle in the fleet. Many implementations use session tokens or API keys without per-command vehicle owner verification. A compromised API key enables mass vehicle manipulation. The attack scales because a single backend vulnerability affects every connected vehicle, not just one.",
+      "prerequisites": [
+        "Compromised backend API credentials or API vulnerability",
+        "Knowledge of command API format and vehicle VINs",
+        "Network access to OEM backend"
+      ],
+      "detection_methods": [
+        "Per-vehicle command rate monitoring",
+        "Owner confirmation for sensitive commands",
+        "API access pattern anomaly detection"
+      ]
+    },
+    {
+      "id": "tcu-sim-cloning",
+      "name": "TCU SIM Card Cloning or Swap",
+      "target_component": "Telematics",
+      "attack_vector": "Cloning or swapping the TCU's embedded SIM to impersonate the vehicle on the cellular network",
+      "stride_category": "SE",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Attacker impersonates vehicle to OEM backend, receiving commands and data intended for the real vehicle",
+      "known_mitigations": [
+        "Use eSIM with remote provisioning and tamper detection",
+        "Implement device attestation beyond SIM identity",
+        "Bind TCU identity to HSM-backed device certificate independent of SIM"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.2",
+        "A5.B.4"
+      ],
+      "description": "An attacker with physical access to the vehicle extracts the TCU SIM card or clones its credentials. Using the cloned SIM in a controlled device, the attacker connects to the cellular network as the vehicle's TCU. The OEM backend cannot distinguish the real TCU from the clone. The attacker receives OTA updates, remote commands, and configuration data intended for the vehicle. Additionally, the attacker can send spoofed telemetry data to the backend, corrupting fleet analytics or triggering false maintenance alerts.",
+      "prerequisites": [
+        "Physical access to TCU for SIM extraction",
+        "SIM cloning equipment or social engineering for SIM swap",
+        "Knowledge of TCU APN configuration"
+      ],
+      "detection_methods": [
+        "Dual registration detection by cellular operator",
+        "Device attestation using HSM beyond SIM identity",
+        "Location plausibility checking"
+      ]
+    },
+    {
+      "id": "tcu-bluetooth-exploit",
+      "name": "TCU Bluetooth Stack Remote Code Execution",
+      "target_component": "Telematics",
+      "attack_vector": "Exploiting Bluetooth Classic or BLE stack vulnerabilities on TCU/IVI to gain remote code execution",
+      "stride_category": "TE",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Remote code execution on TCU or IVI unit, providing foothold for lateral movement to vehicle CAN bus",
+      "known_mitigations": [
+        "Keep Bluetooth stack firmware updated with security patches",
+        "Disable unused Bluetooth profiles",
+        "Isolate Bluetooth-connected systems from safety-critical bus segments via gateway"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.1",
+        "A5.B.3"
+      ],
+      "description": "Bluetooth stacks in automotive TCUs and infotainment systems have historically contained critical vulnerabilities (BlueBorne, BrakTooth, BLUFFS). An attacker within Bluetooth range (typically 10-100m) exploits these vulnerabilities to achieve remote code execution on the TCU or IVI processor. From this initial foothold, the attacker pivots to access the vehicle CAN bus through the TCU's diagnostic or gateway interface. The attack requires no user interaction \u2014 the Bluetooth stack processes pairing and discovery packets before authentication.",
+      "prerequisites": [
+        "Bluetooth radio within range of target vehicle",
+        "Knowledge of TCU Bluetooth stack version",
+        "Exploit code for applicable vulnerability"
+      ],
+      "detection_methods": [
+        "Bluetooth pairing attempt monitoring",
+        "TCU process crash detection",
+        "Anomalous CAN traffic from TCU after Bluetooth connection"
+      ]
+    },
+    {
+      "id": "tcu-wifi-evil-twin",
+      "name": "TCU Wi-Fi Evil Twin Hotspot Attack",
+      "target_component": "Telematics",
+      "attack_vector": "Setting up rogue Wi-Fi access point matching vehicle's known network SSID to intercept TCU Wi-Fi traffic",
+      "stride_category": "IT",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "TCU connects to attacker's network, exposing backend communication and enabling traffic manipulation",
+      "known_mitigations": [
+        "Use 802.1X enterprise authentication for TCU Wi-Fi connections",
+        "Implement certificate pinning for all backend TLS connections",
+        "Disable auto-connect for non-verified networks"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.1",
+        "A5.B.4"
+      ],
+      "description": "Vehicle TCUs with Wi-Fi capability often auto-connect to known SSIDs for faster data transfer (e.g., dealer workshop Wi-Fi for OTA updates). An attacker broadcasts a rogue access point with the same SSID and stronger signal. The TCU connects automatically, routing all traffic through the attacker. If the TCU does not implement certificate pinning or 802.1X authentication, the attacker can intercept and modify backend communication. At dealer workshops where vehicles routinely connect to Wi-Fi, this attack is particularly effective.",
+      "prerequisites": [
+        "Knowledge of SSID the vehicle auto-connects to",
+        "Rogue AP hardware with adequate signal strength",
+        "Proximity to target vehicle"
+      ],
+      "detection_methods": [
+        "Wi-Fi BSSID verification against known list",
+        "Certificate pinning violation logging",
+        "Backend connection metadata anomaly detection"
+      ]
+    },
+    {
+      "id": "tcu-telemetry-exfiltration",
+      "name": "Vehicle Telemetry Data Exfiltration via TCU",
+      "target_component": "Telematics",
+      "attack_vector": "Compromising TCU to silently exfiltrate vehicle location, driver behavior, and occupant data to attacker-controlled server",
+      "stride_category": "I",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Continuous surveillance of vehicle location, routes, driving patterns, and potentially audio from cabin microphone",
+      "known_mitigations": [
+        "Network egress filtering on TCU restricting connections to whitelisted OEM endpoints",
+        "Traffic volume monitoring for anomalous outbound data",
+        "Encrypt and authenticate all CAN-to-TCU data paths"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3",
+        "A5.B.4"
+      ],
+      "description": "An attacker who has gained code execution on the TCU (via Bluetooth, cellular, or Wi-Fi exploit) installs persistent malware that collects vehicle telemetry. The compromised TCU reads GPS position, speed, accelerometer data, CAN bus signals, and potentially cabin microphone audio. The data is exfiltrated over the cellular connection to an attacker-controlled server, using encrypted channels that appear as normal TCU backend traffic. Because the TCU has legitimate network connectivity, the exfiltration traffic blends with normal telemetry uploads.",
+      "prerequisites": [
+        "Initial code execution on TCU",
+        "Understanding of TCU OS and data access APIs",
+        "Attacker-controlled server for data collection"
+      ],
+      "detection_methods": [
+        "Outbound connection monitoring for non-OEM destinations",
+        "Data volume anomaly detection on cellular interface",
+        "TCU firmware integrity periodic verification"
+      ]
+    },
+    {
+      "id": "tcu-firmware-ota-injection",
+      "name": "TCU Firmware Modification via Compromised OTA Channel",
+      "target_component": "Telematics",
+      "attack_vector": "Injecting malicious TCU firmware update through compromised cellular or Wi-Fi OTA channel",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Persistent TCU compromise surviving reboots, enabling long-term vehicle surveillance and control relay",
+      "known_mitigations": [
+        "TCU secure boot with hardware root of trust",
+        "OTA update signature verification using HSM-stored keys",
+        "Verified boot chain reporting status to OEM backend"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.4",
+        "A5.A.6"
+      ],
+      "description": "An attacker who controls the TCU's network path (via rogue base station or Wi-Fi evil twin) serves a malicious firmware update to the TCU. If the TCU lacks secure boot with hardware-backed signature verification, the modified firmware is installed persistently. The attacker's firmware maintains all legitimate TCU functionality while adding backdoor access, data exfiltration, and the ability to relay commands to the vehicle CAN bus. This persistence survives vehicle power cycles and standard troubleshooting.",
+      "prerequisites": [
+        "Network interception position for TCU communications",
+        "Modified TCU firmware image",
+        "TCU lacking hardware-backed secure boot"
+      ],
+      "detection_methods": [
+        "Secure boot attestation failure",
+        "Firmware hash mismatch with OEM golden image",
+        "Boot time anomaly detection"
+      ]
+    },
+    {
+      "id": "tcu-usb-attack-surface",
+      "name": "TCU/IVI USB Interface Exploitation",
+      "target_component": "Telematics",
+      "attack_vector": "Connecting malicious USB device to vehicle IVI/TCU USB port to exploit USB stack vulnerabilities",
+      "stride_category": "TE",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "physical"
+      },
+      "impact": "Code execution on IVI/TCU processor via USB stack exploit, enabling CAN bus access from cabin",
+      "known_mitigations": [
+        "Implement USB device class whitelisting (allow only mass storage, audio)",
+        "Run USB drivers in sandboxed context",
+        "Disable USB debug and ADB interfaces in production firmware"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.1"
+      ],
+      "description": "Vehicle infotainment and telematics units expose USB ports for media playback, phone connectivity, and software updates. An attacker connects a USB device that exploits vulnerabilities in the USB host stack \u2014 BadUSB attacks impersonating keyboards for command injection, malformed USB descriptors triggering buffer overflows in driver parsing, or USB firmware update abuse. Many IVI systems run Android Automotive or Linux with standard USB stacks that inherit IT-world USB vulnerabilities. Physical cabin access is the only requirement.",
+      "prerequisites": [
+        "Physical access to vehicle USB port",
+        "Malicious USB device prepared for target IVI/TCU platform",
+        "Knowledge of target OS and USB stack version"
+      ],
+      "detection_methods": [
+        "USB device class and descriptor validation",
+        "USB insertion event logging",
+        "Process monitoring for unexpected child processes after USB connect"
+      ]
+    },
+    {
+      "id": "tcu-gnss-jamming",
+      "name": "TCU GNSS Signal Jamming",
+      "target_component": "Telematics",
+      "attack_vector": "Broadcasting radio interference on GNSS frequencies to deny vehicle position accuracy",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "minutes",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Vehicle loses GPS position fix \u2014 navigation fails, geofencing disabled, fleet tracking blinded",
+      "known_mitigations": [
+        "Multi-constellation GNSS receiver with jamming detection",
+        "Dead reckoning via IMU and wheel speed sensors during GNSS denial",
+        "Report GNSS quality metrics to backend for fleet-level anomaly detection"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "An attacker uses a low-cost GNSS jammer (commercially available despite illegality) to deny GPS service to nearby vehicles. The TCU loses its position fix, breaking navigation, geofencing, fleet tracking, and location-dependent services. GNSS jamming devices are small enough to be carried in a pocket and affect vehicles within tens to hundreds of meters. For fleet vehicles, this disrupts logistics operations. For personal vehicles, it can disable anti-theft tracking. The attack requires no technical skill \u2014 just turning on the jammer.",
+      "prerequisites": [
+        "GNSS jamming device (commercially available)",
+        "Proximity to target vehicles"
+      ],
+      "detection_methods": [
+        "GNSS signal quality monitoring (C/N0 ratio)",
+        "Dead reckoning discrepancy alerting",
+        "Fleet-level GNSS outage correlation"
+      ]
+    },
+    {
+      "id": "tcu-mqtt-broker-compromise",
+      "name": "TCU MQTT Broker Credential Theft and Abuse",
+      "target_component": "Telematics",
+      "attack_vector": "Extracting MQTT broker credentials from TCU firmware to subscribe to or publish on vehicle telemetry topics",
+      "stride_category": "IE",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Access to real-time telemetry for entire fleet, ability to publish false data or commands via MQTT topics",
+      "known_mitigations": [
+        "Use per-vehicle unique MQTT credentials derived from HSM-stored identity",
+        "Implement MQTT topic-level ACLs restricting per-vehicle access scope",
+        "Rotate MQTT credentials periodically with certificate-based authentication"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.4",
+        "A5.A.1"
+      ],
+      "description": "Many connected vehicle platforms use MQTT for telemetry data transport between vehicle TCUs and cloud backend. The MQTT broker credentials are embedded in TCU firmware \u2014 if all vehicles use the same credentials or the credentials are derived from extractable parameters (like VIN), an attacker who extracts them from one vehicle can access the broker. With broker access, the attacker subscribes to telemetry topics for any vehicle, receiving real-time location, speed, and diagnostic data for the entire fleet. If the broker lacks topic-level ACLs, the attacker can also publish commands.",
+      "prerequisites": [
+        "TCU firmware extraction",
+        "MQTT credential extraction from firmware image",
+        "Network access to MQTT broker endpoint"
+      ],
+      "detection_methods": [
+        "Per-vehicle credential uniqueness verification",
+        "MQTT connection source IP monitoring",
+        "Topic subscription pattern anomaly detection"
+      ]
+    },
+    {
+      "id": "sensor-lidar-spoofing",
+      "name": "LiDAR Sensor Spoofing via Laser Injection",
+      "target_component": "Sensors",
+      "attack_vector": "Injecting laser pulses synchronized with LiDAR scan pattern to create phantom objects in point cloud",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "ADAS perceives phantom obstacles causing unnecessary emergency braking or evasive maneuvers",
+      "known_mitigations": [
+        "Randomize LiDAR scan timing and encoding",
+        "Cross-validate LiDAR detections with radar and camera",
+        "Implement LiDAR pulse fingerprinting for authenticity verification"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "An attacker uses a pulsed laser synchronized with the target vehicle's LiDAR scan pattern to inject false return signals. The LiDAR sensor interprets these injected pulses as reflections from objects at specific distances. By controlling the timing and intensity, the attacker creates phantom objects (walls, vehicles, pedestrians) in the LiDAR point cloud. ADAS systems processing this corrupted point cloud may trigger emergency braking or swerving. The attack requires line-of-sight to the LiDAR sensor and knowledge of its operating frequency and scan pattern.",
+      "prerequisites": [
+        "Pulsed laser matching target LiDAR wavelength",
+        "LiDAR scan timing synchronization",
+        "Line-of-sight to target sensor"
+      ],
+      "detection_methods": [
+        "LiDAR pulse authentication codes",
+        "Multi-sensor fusion inconsistency detection",
+        "Scan pattern randomization detecting synchronized injection"
+      ]
+    },
+    {
+      "id": "sensor-camera-adversarial-patch",
+      "name": "Camera Adversarial Patch Attack",
+      "target_component": "Sensors",
+      "attack_vector": "Placing physical adversarial patches in the environment that cause DNN-based classifiers to misidentify objects",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Object classification errors \u2014 stop signs misread, pedestrians undetected, or lane markings misinterpreted",
+      "known_mitigations": [
+        "Adversarial training with patch augmentation in DNN training pipeline",
+        "Multi-modal verification requiring camera agreement with radar detections",
+        "Input preprocessing with spatial smoothing to neutralize high-frequency patches"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "An attacker prints and places adversarial patches on road infrastructure or vehicles. These patches contain patterns specifically crafted to cause deep neural network (DNN) classifiers to misidentify objects \u2014 a stop sign classified as a speed limit sign, a pedestrian classified as background, or lane markings interpreted incorrectly. The patches exploit known vulnerabilities in DNN architectures where small, targeted perturbations cause confident misclassification. Research has demonstrated physical-world effectiveness of these attacks under varying lighting and angle conditions.",
+      "prerequisites": [
+        "Knowledge of target DNN architecture or transferable adversarial examples",
+        "Printing capability for patch fabrication",
+        "Physical access to place patches in target area"
+      ],
+      "detection_methods": [
+        "Adversarial example detection modules in perception pipeline",
+        "Temporal consistency checking across consecutive frames",
+        "Multi-sensor cross-validation"
+      ]
+    },
+    {
+      "id": "sensor-radar-jamming",
+      "name": "Automotive Radar Jamming Attack",
+      "target_component": "Sensors",
+      "attack_vector": "Broadcasting RF interference on 77 GHz radar band to blind vehicle radar sensors",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Radar-based ADAS features disabled \u2014 adaptive cruise control, collision avoidance, and blind spot detection fail",
+      "known_mitigations": [
+        "Implement radar interference detection and reporting",
+        "Design ADAS to degrade gracefully with driver notification on sensor loss",
+        "Use frequency hopping or spread-spectrum techniques in radar waveform"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "An attacker transmits interference signals on the 76-81 GHz automotive radar band. The interference overwhelms the radar receiver, preventing detection of real targets. This blinds ADAS features dependent on radar \u2014 adaptive cruise control loses track of the lead vehicle, automatic emergency braking cannot detect obstacles, and blind-spot monitoring fails. Unlike LiDAR spoofing which creates phantom objects, radar jamming causes absence of real objects from the perception. The vehicle may continue driving without radar input if the ADAS does not properly handle sensor degradation.",
+      "prerequisites": [
+        "77 GHz RF signal generator or radar jammer",
+        "Proximity to target vehicle (within radar operating range)",
+        "No specific vehicle knowledge required"
+      ],
+      "detection_methods": [
+        "Radar noise floor monitoring",
+        "Sudden target loss correlation across multiple radar channels",
+        "Driver alert on radar performance degradation"
+      ]
+    },
+    {
+      "id": "sensor-radar-spoofing",
+      "name": "Automotive Radar Target Spoofing",
+      "target_component": "Sensors",
+      "attack_vector": "Retransmitting radar signals with modified delay to create phantom targets at controlled distances",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Radar reports phantom vehicles or objects at attacker-chosen distances, triggering ADAS false activations",
+      "known_mitigations": [
+        "Implement radar waveform authentication or randomization",
+        "Cross-validate radar targets with camera and LiDAR",
+        "Apply Doppler consistency checks for phantom target detection"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "An attacker captures the vehicle's transmitted FMCW radar chirp, applies a controlled time delay, and retransmits it toward the radar receiver. The radar interprets the delayed reflection as a target at a specific range proportional to the added delay. By varying the delay, the attacker controls the apparent distance of the phantom target. Advanced attacks also shift the frequency to spoof Doppler velocity. The vehicle's ADAS reacts to the phantom target \u2014 braking, accelerating, or changing lanes based on the spoofed radar data.",
+      "prerequisites": [
+        "Radar front-end capable of receive and retransmit at 77 GHz",
+        "Synchronization with target vehicle's radar chirp",
+        "Line-of-sight positioning"
+      ],
+      "detection_methods": [
+        "Chirp randomization detecting replayed waveforms",
+        "Multi-sensor consistency checking",
+        "Target trajectory plausibility validation"
+      ]
+    },
+    {
+      "id": "sensor-ultrasonic-spoofing",
+      "name": "Ultrasonic Parking Sensor Spoofing",
+      "target_component": "Sensors",
+      "attack_vector": "Generating ultrasonic signals to create phantom obstacles or mask real objects in parking sensor coverage",
+      "stride_category": "ST",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Parking assist system reports false obstacles or fails to detect real ones, causing collision or usability issues",
+      "known_mitigations": [
+        "Cross-validate ultrasonic readings with camera-based parking view",
+        "Implement ultrasonic pulse coding for authentication",
+        "Use multiple sensor fusion for parking assist decisions"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "Ultrasonic parking sensors operate on simple time-of-flight measurement with no signal authentication. An attacker uses an ultrasonic transducer to inject signals that the parking sensor interprets as reflections from objects. By controlling timing, the attacker creates phantom obstacles preventing the driver from parking in a particular spot, or conversely, saturates the sensor with constant signals that mask real obstacles behind the vehicle. Consumer-grade ultrasonic transducers and signal generators are sufficient for this attack.",
+      "prerequisites": [
+        "Ultrasonic transducer matching sensor frequency (40-48 kHz typical)",
+        "Signal generator or microcontroller for timing control",
+        "Proximity to target vehicle"
+      ],
+      "detection_methods": [
+        "Multi-sensor cross-validation with camera",
+        "Ultrasonic pulse encoding verification",
+        "Temporal consistency checks across sensor array"
+      ]
+    },
+    {
+      "id": "sensor-camera-blinding",
+      "name": "Camera Sensor Blinding via Directed Light",
+      "target_component": "Sensors",
+      "attack_vector": "Directing high-intensity light at vehicle camera sensors to cause image saturation and blindness",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "minutes",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Camera-based ADAS features disabled \u2014 lane keeping, traffic sign recognition, and pedestrian detection fail",
+      "known_mitigations": [
+        "Implement auto-exposure and HDR imaging to handle glare",
+        "Cross-validate camera data with radar and LiDAR",
+        "Detect and report camera blinding events as sensor degradation"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "An attacker directs a high-intensity light source (laser pointer, LED array, or reflected sunlight) at the vehicle's front-facing camera. The camera sensor saturates, producing whiteout images that the perception algorithms cannot process. Lane markings, traffic signs, pedestrians, and other vehicles become invisible to the camera system. If the ADAS relies primarily on camera for these functions (as in vision-centric architectures), the vehicle loses critical safety features. Unlike jamming, camera blinding is visible to the driver but may not trigger automatic system degradation.",
+      "prerequisites": [
+        "High-intensity light source",
+        "Line-of-sight to camera sensor",
+        "No specific vehicle knowledge needed"
+      ],
+      "detection_methods": [
+        "Image saturation level monitoring",
+        "Automatic sensor degradation mode activation",
+        "Multi-sensor fallback triggering"
+      ]
+    },
+    {
+      "id": "sensor-imu-acoustic-injection",
+      "name": "IMU Acoustic Resonance Injection Attack",
+      "target_component": "Sensors",
+      "attack_vector": "Using targeted acoustic signals at MEMS resonant frequency to inject false readings into inertial measurement unit",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "False acceleration or rotation data injected, causing stability control errors or dead reckoning drift",
+      "known_mitigations": [
+        "Acoustic shielding of MEMS IMU package",
+        "Low-pass filtering to remove resonant frequency components",
+        "Cross-validate IMU with wheel speed sensors and GPS"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "MEMS accelerometers and gyroscopes have mechanical resonant frequencies typically between 5-30 kHz. An attacker generates acoustic signals at these frequencies using a speaker or piezoelectric transducer. The acoustic energy causes the MEMS proof mass to vibrate at the resonant frequency, injecting false acceleration or rotation signals into the IMU output. This corrupts the vehicle stability control, rollover detection, and dead reckoning navigation. Research has demonstrated this attack against automotive-grade MEMS sensors at distances of several meters.",
+      "prerequisites": [
+        "Knowledge of target IMU MEMS resonant frequency",
+        "Acoustic transducer capable of required frequency and power",
+        "Proximity to target vehicle"
+      ],
+      "detection_methods": [
+        "Resonant frequency bandpass detection on IMU output",
+        "Cross-sensor plausibility checks",
+        "Acoustic shielding effectiveness verification"
+      ]
+    },
+    {
+      "id": "sensor-wheel-speed-manipulation",
+      "name": "Wheel Speed Sensor Signal Manipulation",
+      "target_component": "Sensors",
+      "attack_vector": "Injecting false signals into wheel speed sensor wiring to corrupt ABS/ESC input data",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "physical"
+      },
+      "impact": "ABS and ESC compute incorrect wheel speeds \u2014 braking force distribution errors, false stability interventions",
+      "known_mitigations": [
+        "Use active wheel speed sensors with encrypted digital output",
+        "Implement plausibility checks comparing all four wheel speeds",
+        "Physical tamper detection on sensor wiring harness"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "Passive wheel speed sensors generate simple AC signals proportional to wheel rotation speed. An attacker with physical access to the wheel well or underbody connects to the sensor wiring and injects additional AC signals. The receiving ECU (ABS/ESC controller) sums the real and injected signals, computing incorrect wheel speed. This causes the ABS to apply incorrect braking force distribution or the ESC to intervene unnecessarily. Active sensors with digital protocols are more resistant, but many vehicles still use passive magnetic sensors on rear axles.",
+      "prerequisites": [
+        "Physical access to wheel speed sensor wiring",
+        "Signal generator matching sensor output characteristics",
+        "Knowledge of sensor type (passive Hall or active)"
+      ],
+      "detection_methods": [
+        "Four-wheel speed consistency checking",
+        "Sensor signal waveform quality monitoring",
+        "Physical wiring inspection during service"
+      ]
+    },
+    {
+      "id": "sensor-camera-frame-injection",
+      "name": "Camera Data Stream Frame Injection via Ethernet",
+      "target_component": "Sensors",
+      "attack_vector": "Injecting modified camera frames into automotive Ethernet data stream between camera module and ADAS ECU",
+      "stride_category": "T",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "local-network"
+      },
+      "impact": "ADAS processes manipulated camera images \u2014 objects removed, phantom objects added, or scene content altered",
+      "known_mitigations": [
+        "Authenticate camera data streams at the link and transport layer",
+        "Use MACsec on camera Ethernet connections",
+        "Implement frame sequence numbering with cryptographic integrity"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3",
+        "A5.A.2"
+      ],
+      "description": "In camera-over-Ethernet architectures, raw or compressed camera frames travel from the camera module to the ADAS ECU over automotive Ethernet. An attacker who gains access to this Ethernet segment (through physical tap or compromised switch) can inject modified frames into the stream. By replacing legitimate frames with altered versions \u2014 removing pedestrians, shifting lane markings, or adding phantom objects \u2014 the attacker manipulates the ADAS perception input. Frame-level authentication using MACsec or application-layer signing prevents this but adds latency.",
+      "prerequisites": [
+        "Physical access to camera Ethernet link",
+        "Real-time frame modification capability",
+        "Knowledge of camera stream protocol and format"
+      ],
+      "detection_methods": [
+        "Frame authentication MAC verification",
+        "Temporal consistency detection across consecutive frames",
+        "MACsec link integrity monitoring"
+      ]
+    },
+    {
+      "id": "sensor-gps-spoofing-navigation",
+      "name": "GPS Spoofing for Navigation Manipulation",
+      "target_component": "Sensors",
+      "attack_vector": "Transmitting counterfeit GPS signals to gradually shift vehicle's perceived position and mislead navigation",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Vehicle navigation misled \u2014 driver routed to wrong location, geofencing boundaries shifted, fleet tracking corrupted",
+      "known_mitigations": [
+        "Multi-constellation GNSS with cross-constellation consistency checks",
+        "GPS spoofing detection using signal characteristics analysis",
+        "IMU-based dead reckoning cross-validation with GPS position"
+      ],
+      "r155_annex5_refs": [
+        "A5.B.3"
+      ],
+      "description": "An attacker uses a GPS simulator to broadcast counterfeit GPS signals that gradually shift the vehicle's computed position. Unlike jamming, spoofing is stealthy \u2014 the vehicle continues reporting a position, but the position is incorrect. The attacker can redirect navigation to wrong locations, shift geofencing boundaries to allow vehicles into restricted areas, or corrupt fleet tracking data. The gradual position shift avoids triggering sudden-jump detection. Autonomous vehicles relying on GPS for localization are particularly at risk for route manipulation.",
+      "prerequisites": [
+        "GPS signal simulator capable of multi-satellite spoofing",
+        "Proximity to or following target vehicle",
+        "Knowledge of target area for plausible position shift"
+      ],
+      "detection_methods": [
+        "Multi-GNSS constellation cross-validation",
+        "IMU/odometry position drift detection",
+        "Map-matching inconsistency alerting"
+      ]
+    },
+    {
+      "id": "access-relay-attack",
+      "name": "Keyless Entry Relay Attack",
+      "target_component": "Access_Control",
+      "attack_vector": "Relaying RF signal between key fob and vehicle using two coordinated devices to extend communication range",
+      "stride_category": "SE",
+      "feasibility": {
+        "elapsed_time": "minutes",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Vehicle unlocked and engine started without owner's knowledge, enabling theft",
+      "known_mitigations": [
+        "Implement UWB distance bounding for precise proximity verification",
+        "Add motion sensor to key fob disabling relay when stationary",
+        "Use BLE-based proximity detection as secondary check"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5",
+        "A5.B.1"
+      ],
+      "description": "Passive keyless entry systems (PKES) use low-frequency challenge and UHF response between vehicle and key fob, assuming proximity means authorization. Two attackers with relay devices extend this communication over arbitrary distances \u2014 one device near the vehicle captures the LF challenge, relays it to the second device near the owner's key fob (e.g., through the front door of their house), which triggers the fob's UHF response relayed back to the vehicle. The vehicle and fob both believe they are in close proximity. This is the most common method of keyless vehicle theft.",
+      "prerequisites": [
+        "Pair of relay devices (commercially available)",
+        "Two coordinated attackers",
+        "Knowledge of target vehicle's key fob proximity"
+      ],
+      "detection_methods": [
+        "UWB time-of-flight distance measurement",
+        "Key fob motion detection (accelerometer)",
+        "Vehicle anomaly detection for unlock without key movement"
+      ]
+    },
+    {
+      "id": "access-rolling-code-prediction",
+      "name": "Key Fob Rolling Code Prediction",
+      "target_component": "Access_Control",
+      "attack_vector": "Predicting or exploiting weaknesses in RKE rolling code PRNG to generate valid future codes",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Attacker can unlock and potentially start vehicle at any time using predicted valid codes",
+      "known_mitigations": [
+        "Use cryptographically strong PRNG for rolling code generation",
+        "Implement AES-based challenge-response instead of rolling codes",
+        "Limit rolling code window to reject codes too far ahead"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5"
+      ],
+      "description": "RKE (Remote Keyless Entry) systems use rolling codes where each button press generates the next code in a PRNG sequence. If the PRNG algorithm is weak or uses insufficient key length, an attacker who captures several consecutive codes can reverse-engineer the PRNG state and predict all future codes. Historical examples include KeeLoq (broken via side-channel and algebraic attacks) and Hitag2 (broken via correlation attacks). Once the PRNG state is known, the attacker generates valid codes indefinitely without needing the original key fob.",
+      "prerequisites": [
+        "RF receiver to capture rolling codes",
+        "Sufficient captured codes for PRNG state recovery",
+        "Computational resources for cryptanalysis"
+      ],
+      "detection_methods": [
+        "Backend tracking of lock/unlock events vs. owner app location",
+        "Duplicate code usage detection",
+        "Anomalous access time pattern alerting"
+      ]
+    },
+    {
+      "id": "access-can-injection-unlock",
+      "name": "CAN Bus Injection Vehicle Unlock",
+      "target_component": "Access_Control",
+      "attack_vector": "Injecting unlock command CAN frames directly on the bus to bypass external RF access control entirely",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Vehicle doors unlocked, potentially engine started, by bypassing all RF-layer access control",
+      "known_mitigations": [
+        "Authenticate door lock CAN commands with SecOC",
+        "Restrict CAN IDs for lock/unlock to body controller only",
+        "Gateway filtering blocking lock commands from unauthorized bus segments"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5",
+        "A5.A.3"
+      ],
+      "description": "Once an attacker has any access to the vehicle CAN bus (via OBD-II dongle, compromised ECU, or physical wire tap), they can inject the CAN frames that the body control module uses to lock and unlock doors. These frames are typically unauthenticated in vehicles without SecOC. The attacker bypasses all RF-level access control (key fob, NFC, phone key) by commanding the body controller directly at the CAN protocol level. Combined with engine start CAN commands, this enables full vehicle theft through the diagnostic or internal network port.",
+      "prerequisites": [
+        "CAN bus access via any method",
+        "Knowledge of door lock/unlock CAN IDs and payloads",
+        "CAN frame injection capability"
+      ],
+      "detection_methods": [
+        "SecOC authentication of lock/unlock CAN commands",
+        "Gateway filtering preventing lock commands from diagnostic port",
+        "Anomalous lock/unlock event logging and alerting"
+      ]
+    },
+    {
+      "id": "access-phone-key-bluetooth-exploit",
+      "name": "Phone-as-Key Bluetooth Relay and Exploit",
+      "target_component": "Access_Control",
+      "attack_vector": "Relaying or exploiting BLE phone-as-key communication to unlock vehicle without authorized phone present",
+      "stride_category": "SE",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "Vehicle unlocked and started using relayed phone-as-key signal, enabling theft without physical key or phone",
+      "known_mitigations": [
+        "Implement UWB ranging for BLE phone-as-key",
+        "Require user confirmation on phone app for unlock",
+        "Use BLE channel hopping analysis for relay detection"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5",
+        "A5.B.1"
+      ],
+      "description": "Phone-as-key systems replace traditional key fobs with smartphone BLE communication. These systems inherit relay attack vulnerability from PKES \u2014 an attacker relays the BLE signal between the owner's phone and the vehicle using two COTS Bluetooth-capable devices. BLE relay attacks have lower latency requirements than LF/UHF relay, and BLE signal processing adds relay-detection-defeating delays. Some implementations also have app-level vulnerabilities (insecure token storage, API bypasses) that allow key cloning without physical relay.",
+      "prerequisites": [
+        "BLE relay devices or phone-as-key app vulnerability",
+        "Two coordinated attackers for relay scenario",
+        "Knowledge of target vehicle BLE protocol"
+      ],
+      "detection_methods": [
+        "UWB time-of-flight ranging",
+        "BLE round-trip time analysis for relay detection",
+        "Phone app location vs. vehicle location comparison"
+      ]
+    },
+    {
+      "id": "access-nfc-key-cloning",
+      "name": "NFC Key Card Cloning Attack",
+      "target_component": "Access_Control",
+      "attack_vector": "Reading and cloning NFC key card credentials using portable NFC reader to create duplicate access card",
+      "stride_category": "SE",
+      "feasibility": {
+        "elapsed_time": "minutes",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "physical"
+      },
+      "impact": "Cloned NFC key provides persistent vehicle access identical to legitimate key card",
+      "known_mitigations": [
+        "Use NFC cards with cryptographic challenge-response (e.g., DESFire EV3)",
+        "Implement per-session random challenges that cannot be replayed",
+        "Backend-track NFC card usage for duplicate detection"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5"
+      ],
+      "description": "Some vehicles use NFC cards as backup access method. An attacker with a portable NFC reader (concealed as a phone or wallet) approaches the vehicle owner in a public setting and reads the NFC card credentials through clothing or bag at ranges up to 10 cm. If the NFC card uses static credentials (UID-only authentication or weak crypto like MIFARE Classic), the attacker writes these credentials to a blank card. The cloned card unlocks the vehicle identically to the original. Cards with strong cryptographic authentication prevent cloning but add cost and complexity.",
+      "prerequisites": [
+        "Portable NFC reader",
+        "Brief proximity to owner's NFC key card",
+        "Blank writable NFC card for cloning"
+      ],
+      "detection_methods": [
+        "Cryptographic challenge-response preventing credential replay",
+        "NFC card usage event logging",
+        "Duplicate UID detection at vehicle"
+      ]
+    },
+    {
+      "id": "access-immobilizer-bypass",
+      "name": "Engine Immobilizer Transponder Bypass",
+      "target_component": "Access_Control",
+      "attack_vector": "Bypassing immobilizer transponder authentication using emulation device or ECU reprogramming",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Engine starts without authorized transponder \u2014 immobilizer security completely defeated",
+      "known_mitigations": [
+        "Use AES-128 or stronger transponder authentication",
+        "Bind immobilizer to ECU via HSM with anti-tamper",
+        "Implement immobilizer bypass attempt logging to backend"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5"
+      ],
+      "description": "The engine immobilizer uses an RFID transponder in the key to authenticate with the engine ECU before allowing ignition. An attacker defeats this through several methods: reprogramming the engine ECU to accept new transponder keys (using stolen dealer tools or extracted seed-key algorithms), emulating the transponder response using captured challenge-response pairs, or exploiting weak cryptography in legacy transponder protocols (e.g., Hitag2, DST40). Aftermarket immobilizer bypass devices are commercially available for many vehicle models.",
+      "prerequisites": [
+        "Knowledge of target immobilizer protocol",
+        "Transponder emulator or ECU programming tool",
+        "Physical access to vehicle ignition system"
+      ],
+      "detection_methods": [
+        "Immobilizer authentication failure logging",
+        "New transponder registration event alerting",
+        "ECU configuration change detection"
+      ]
+    },
+    {
+      "id": "access-signal-jamming-theft",
+      "name": "Key Fob Signal Jamming for Theft Preparation",
+      "target_component": "Access_Control",
+      "attack_vector": "Jamming key fob lock signal so vehicle remains unlocked while owner believes it is secured",
+      "stride_category": "D",
+      "feasibility": {
+        "elapsed_time": "minutes",
+        "expertise": "layperson",
+        "knowledge": "public",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Vehicle left unlocked in parking lot without owner awareness, enabling opportunistic theft of contents or vehicle",
+      "known_mitigations": [
+        "Visual/audible lock confirmation feedback independent of RF",
+        "Vehicle auto-lock after timeout if no motion detected",
+        "Lock state verification via companion app notification"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5",
+        "A5.B.1"
+      ],
+      "description": "An attacker positioned in a parking area operates a broadband RF jammer on the 315/433 MHz or 868 MHz frequencies used by key fobs. When the owner presses the lock button, the RF signal is jammed and never reaches the vehicle receiver. The vehicle remains unlocked, but the owner walks away believing it is locked. The attacker then accesses the vehicle at leisure. This is a low-skill, high-success-rate attack because many owners do not verify lock status visually. Some vehicles provide visual confirmation (mirror fold, indicator flash) that would alert the owner.",
+      "prerequisites": [
+        "Broadband RF jammer covering key fob frequencies",
+        "Positioning in parking area near target vehicle",
+        "No specific vehicle knowledge required"
+      ],
+      "detection_methods": [
+        "Vehicle auto-lock timeout when driver walks away",
+        "Companion app lock state notification",
+        "RF interference detection at vehicle receiver"
+      ]
+    },
+    {
+      "id": "access-backend-key-provisioning",
+      "name": "Backend Digital Key Provisioning Compromise",
+      "target_component": "Access_Control",
+      "attack_vector": "Attacking OEM backend system to provision unauthorized digital keys for target vehicles",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "weeks",
+        "expertise": "expert",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "remote"
+      },
+      "impact": "Unauthorized digital keys provisioned for any vehicle in fleet, enabling remote or proximity-based access",
+      "known_mitigations": [
+        "Multi-factor owner verification for digital key provisioning",
+        "Rate limiting and anomaly detection on key provisioning API",
+        "Vehicle-side owner confirmation for new key acceptance"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5",
+        "A5.B.4"
+      ],
+      "description": "Digital key systems (CCC, ICCE) allow OEMs to provision vehicle access keys to smartphones and wearables through backend APIs. An attacker who compromises the key provisioning backend \u2014 through API vulnerability, credential theft, or insider access \u2014 can create and distribute valid digital keys for any vehicle in the fleet. Unlike physical key attacks that target one vehicle, backend compromise scales to the entire fleet. The provisioned keys are cryptographically valid and indistinguishable from legitimately issued keys at the vehicle side.",
+      "prerequisites": [
+        "Access to OEM digital key provisioning API",
+        "API authentication bypass or credential compromise",
+        "Knowledge of target vehicle VINs"
+      ],
+      "detection_methods": [
+        "Key provisioning event logging with owner notification",
+        "Anomalous provisioning rate detection",
+        "Vehicle-side new key acceptance requiring owner presence"
+      ]
+    },
+    {
+      "id": "access-uwb-distance-manipulation",
+      "name": "UWB Ranging Distance Manipulation",
+      "target_component": "Access_Control",
+      "attack_vector": "Manipulating UWB distance bounding measurements to make vehicle believe authorized key is closer than actual",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "months",
+        "expertise": "expert",
+        "knowledge": "critical",
+        "equipment": "specialized",
+        "access": "remote"
+      },
+      "impact": "UWB distance verification defeated, enabling relay-style attack on systems designed to resist relay attacks",
+      "known_mitigations": [
+        "Implement IEEE 802.15.4z HRP-ERDEV with scrambled timestamp sequence",
+        "Use multiple UWB anchors for position triangulation",
+        "Combine UWB ranging with IMU-based movement detection"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5"
+      ],
+      "description": "UWB (Ultra-Wideband) distance bounding is deployed as a countermeasure against relay attacks, using time-of-flight measurements to verify the key is physically near the vehicle. An attacker attempts to manipulate the UWB ranging by performing early-detect/late-commit attacks on the UWB preamble, injecting signals that cause the receiver to compute a shorter distance than actual. IEEE 802.15.4z with scrambled timestamp sequences makes this significantly harder but not theoretically impossible. This is at the frontier of current research and requires specialized RF equipment and signal processing expertise.",
+      "prerequisites": [
+        "UWB transceiver with sub-nanosecond timing control",
+        "Knowledge of target UWB ranging protocol",
+        "Specialized signal processing for early-detect attacks"
+      ],
+      "detection_methods": [
+        "Multi-anchor position consistency checking",
+        "UWB channel impulse response analysis",
+        "Scrambled timestamp sequence verification"
+      ]
+    },
+    {
+      "id": "access-biometric-spoofing",
+      "name": "Vehicle Biometric Authentication Spoofing",
+      "target_component": "Access_Control",
+      "attack_vector": "Spoofing fingerprint, face, or voice biometric sensors used for vehicle access or personalization",
+      "stride_category": "S",
+      "feasibility": {
+        "elapsed_time": "days",
+        "expertise": "proficient",
+        "knowledge": "public",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "Biometric access control bypassed, enabling unauthorized vehicle access or driver profile impersonation",
+      "known_mitigations": [
+        "Use multimodal biometric verification requiring two factors",
+        "Implement liveness detection to reject spoofed biometric samples",
+        "Treat biometrics as convenience feature, not sole security factor"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5"
+      ],
+      "description": "Vehicles increasingly use biometric authentication \u2014 fingerprint sensors on door handles, facial recognition cameras, and voice recognition for driver identification. An attacker creates spoofing artifacts: silicone fingerprint molds from lifted prints, 3D-printed face masks or high-resolution photo displays for facial recognition, and recorded/synthesized voice samples. Consumer-grade biometric sensors in vehicles may lack robust liveness detection (checking for pulse, depth, lip movement) that security-focused implementations require. Biometrics work best as a convenience factor paired with possession factor (key, phone).",
+      "prerequisites": [
+        "Captured biometric sample of authorized user",
+        "Spoofing artifact fabrication capability",
+        "Physical proximity to target vehicle"
+      ],
+      "detection_methods": [
+        "Liveness detection algorithms (pulse, depth, movement)",
+        "Multi-factor authentication enforcement",
+        "Biometric authentication failure rate monitoring"
+      ]
+    },
+    {
+      "id": "access-aftermarket-alarm-bypass",
+      "name": "Aftermarket Security System CAN Bus Bypass",
+      "target_component": "Access_Control",
+      "attack_vector": "Bypassing aftermarket alarm or immobilizer by directly commanding vehicle ECUs via CAN bus, ignoring the add-on system",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "standard",
+        "access": "local-network"
+      },
+      "impact": "Aftermarket security defeated by operating at a lower protocol layer than it monitors",
+      "known_mitigations": [
+        "Aftermarket systems should interrupt physical circuits, not just monitor CAN",
+        "Integrate aftermarket security with OEM immobilizer via authenticated interface",
+        "CAN bus authentication (SecOC) preventing unauthorized commands regardless of source"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5",
+        "A5.A.3"
+      ],
+      "description": "Aftermarket alarm and immobilizer systems typically tap into the vehicle CAN bus to monitor lock/unlock events and control engine start relay. An attacker who understands the CAN bus architecture can bypass these systems by directly commanding the body control module and engine ECU at the CAN protocol level, below the monitoring layer of the aftermarket device. The aftermarket system monitors specific CAN IDs for key events but cannot prevent direct ECU commands it does not recognize. Only systems that physically interrupt circuits (starter relay, fuel pump) resist CAN-level bypass.",
+      "prerequisites": [
+        "CAN bus access",
+        "Knowledge of vehicle CAN database",
+        "Understanding of aftermarket system monitoring approach"
+      ],
+      "detection_methods": [
+        "Aftermarket system monitoring for unexpected CAN commands",
+        "Physical circuit interruption independent of CAN",
+        "Cellular alert on bypass attempt detection"
+      ]
+    },
+    {
+      "id": "access-thatcham-key-cloning",
+      "name": "Dealer Tool Key Programming Abuse",
+      "target_component": "Access_Control",
+      "attack_vector": "Using stolen or cloned dealer diagnostic tool to program new keys into vehicle, bypassing owner authorization",
+      "stride_category": "E",
+      "feasibility": {
+        "elapsed_time": "hours",
+        "expertise": "proficient",
+        "knowledge": "restricted",
+        "equipment": "specialized",
+        "access": "physical"
+      },
+      "impact": "New key programmed for vehicle without owner knowledge, providing persistent authorized access for theft",
+      "known_mitigations": [
+        "Require OEM backend authorization token for key programming",
+        "Implement key programming event notification to registered owner",
+        "Log all key programming events with technician identity to OEM cloud"
+      ],
+      "r155_annex5_refs": [
+        "A5.A.5",
+        "A5.A.4"
+      ],
+      "description": "Authorized dealer diagnostic tools include key programming functionality for lost key replacement. An attacker obtains access to a dealer tool \u2014 through theft, cloning, or compromising the tool authentication \u2014 and uses it to program a new key into the target vehicle's immobilizer. The vehicle accepts the new key as legitimate. Some vehicles allow key programming through the OBD-II port with only seed-key authentication, while others require backend authorization. Stolen dealer tools with valid credentials are regularly used in organized vehicle theft operations.",
+      "prerequisites": [
+        "Dealer diagnostic tool access",
+        "Physical access to vehicle OBD-II port",
+        "Tool authentication credentials (stolen or compromised)"
+      ],
+      "detection_methods": [
+        "Backend authorization requirement for key programming",
+        "Owner notification on new key registration",
+        "Dealer tool usage audit logging"
+      ]
+    }
+  ]
+}

@@ -590,6 +590,54 @@ function loadArchitecturePatterns(db: Database.Database): void {
   console.log(`✓ Loaded ${result.count} architecture patterns`);
 }
 
+/**
+ * Load attack patterns from seed JSON file
+ */
+function loadAttackPatterns(db: Database.Database): void {
+  const seedPath = join(SEED_DIR, 'attack-patterns.json');
+
+  if (!existsSync(seedPath)) {
+    console.log('⚠ No attack-patterns.json found, skipping...');
+    return;
+  }
+
+  const data = JSON.parse(readFileSync(seedPath, 'utf-8'));
+
+  const insertPattern = db.prepare(`
+    INSERT INTO attack_patterns (id, name, target_component, attack_vector, stride_category, feasibility, impact, known_mitigations, r155_annex5_refs, description, prerequisites, detection_methods)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const loadAll = db.transaction(() => {
+    let count = 0;
+
+    if (data.patterns) {
+      for (const p of data.patterns) {
+        insertPattern.run(
+          p.id,
+          p.name,
+          p.target_component,
+          p.attack_vector,
+          p.stride_category,
+          JSON.stringify(p.feasibility),
+          p.impact,
+          JSON.stringify(p.known_mitigations),
+          p.r155_annex5_refs ? JSON.stringify(p.r155_annex5_refs) : null,
+          p.description,
+          p.prerequisites ? JSON.stringify(p.prerequisites) : null,
+          p.detection_methods ? JSON.stringify(p.detection_methods) : null
+        );
+        count++;
+      }
+    }
+
+    return { count };
+  });
+
+  const result = loadAll();
+  console.log(`✓ Loaded ${result.count} attack patterns`);
+}
+
 function buildDatabase() {
   console.log('Building automotive cybersecurity database...');
 
@@ -628,6 +676,7 @@ function buildDatabase() {
     loadRegulations(db);
     loadStandards(db);
     loadArchitecturePatterns(db);
+    loadAttackPatterns(db);
 
     // Insert db_metadata
     const pkgPath = join(__dirname, '..', 'package.json');
