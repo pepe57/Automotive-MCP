@@ -23,8 +23,9 @@ import { searchAttackPatterns } from './attacks.js';
 import { generateTara } from './tara-generator.js';
 import { mapCompliancePath } from './compliance-path.js';
 import { getCsmsObligations } from './csms.js';
+import { compareMarkets } from './markets.js';
 import { getAbout, type AboutContext } from './about.js';
-import type { ListSourcesInput, GetRequirementInput, SearchRequirementsInput, ListWorkProductsInput, ExportComplianceMatrixInput, GetArchitecturePatternInput, SearchAttackPatternsInput, GenerateTaraInput, MapCompliancePathInput, GetCsmsObligationsInput } from '../types/index.js';
+import type { ListSourcesInput, GetRequirementInput, SearchRequirementsInput, ListWorkProductsInput, ExportComplianceMatrixInput, GetArchitecturePatternInput, SearchAttackPatternsInput, GenerateTaraInput, MapCompliancePathInput, GetCsmsObligationsInput, CompareMarketsInput } from '../types/index.js';
 
 /**
  * Tool definition with name, description, input schema, and handler function
@@ -370,6 +371,35 @@ const TOOLS: ToolDefinition[] = [
     handler: (db: InstanceType<typeof Database>, args: unknown) => {
       const input = args as GetCsmsObligationsInput;
       return getCsmsObligations(db, input);
+    },
+  },
+  {
+    name: 'compare_markets',
+    description:
+      'Compare automotive cybersecurity requirements across markets. Provide 2+ market regulation IDs (e.g., \'r155\', \'gbt_40857\', \'kmvss_18_3\') and optionally filter by topic. Returns common requirements, market-specific obligations, and cross-market equivalences.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        markets: {
+          type: 'array',
+          items: {
+            type: 'string',
+          },
+          minItems: 2,
+          description:
+            'Array of market regulation IDs to compare (minimum 2). Use list_sources to see available regulation IDs (e.g., "r155", "gbt_40857", "kmvss_18_3", "ais_189", "mlit_guidelines").',
+        },
+        topic: {
+          type: 'string',
+          description:
+            'Optional topic filter. Uses FTS5 to find requirements related to the topic across all specified markets (e.g., "software update", "intrusion detection", "risk assessment").',
+        },
+      },
+      required: ['markets'],
+    },
+    handler: (db: InstanceType<typeof Database>, args: unknown) => {
+      const input = args as CompareMarketsInput;
+      return compareMarkets(db, input);
     },
   },
 ];
