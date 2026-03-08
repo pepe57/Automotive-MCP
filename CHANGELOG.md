@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-03-08
+
+### Added
+- 5 new market regulations: GB/T 40857, GB/T 40856, KMVSS 18-3, AIS-189, MLIT Guidelines
+- R155/R156 paragraph-level breakdown (342 content items, up from 33)
+- 20 architecture reference patterns with FTS5 search
+- 90 automotive attack patterns across 9 target components
+- 12 complete TARA worked examples
+- 47 CSMS operational obligations across 5 lifecycle phases
+- 2,000+ cross-framework mappings (up from 483)
+- 6 new tools: get_architecture_pattern, search_attack_patterns, generate_tara, map_compliance_path, get_csms_obligations, compare_markets
+- Full integration test suite
+
+### Changed
+- All standard guidance rewritten to 300-800 words (was 50-100 words)
+- export_compliance_matrix now supports all 7 regulations
+- search_requirements now searches architecture patterns, attack patterns, and CSMS obligations
+- ISO 21434, ISO 14229, AUTOSAR, TISAX, ISO 26262, ISO 24089, GB/T 40857 guidance expanded to implementation depth
+
 ## [1.0.2] - 2026-02-17
 
 ### Added
@@ -99,7 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ISO 21434 Clause 9.3 guidance
 - Basic testing framework
 
-[Unreleased]: https://github.com/Ansvar-Systems/Automotive-MCP/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/Ansvar-Systems/Automotive-MCP/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/Ansvar-Systems/Automotive-MCP/compare/v1.0.2...v2.0.0
 [1.0.2]: https://github.com/Ansvar-Systems/Automotive-MCP/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/Ansvar-Systems/Automotive-MCP/compare/v0.1.0...v1.0.1
 [0.1.0]: https://github.com/Ansvar-Systems/Automotive-MCP/releases/tag/v0.1.0
