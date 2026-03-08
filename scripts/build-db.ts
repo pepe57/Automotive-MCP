@@ -727,6 +727,55 @@ function loadCsmsObligations(db: Database.Database): void {
   console.log(`✓ Loaded ${result.count} CSMS obligations`);
 }
 
+/**
+ * Load cross-framework mappings from dedicated seed file
+ */
+function loadCrossMappings(db: Database.Database): void {
+  const seedPath = join(SEED_DIR, 'cross-mappings.json');
+
+  if (!existsSync(seedPath)) {
+    console.log('⚠ No cross-mappings.json found, skipping...');
+    return;
+  }
+
+  const data = JSON.parse(readFileSync(seedPath, 'utf-8'));
+
+  const insertMapping = db.prepare(`
+    INSERT OR IGNORE INTO framework_mappings (source_type, source_id, source_ref, target_type, target_id, target_ref, relationship, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const loadAll = db.transaction(() => {
+    let inserted = 0;
+    let skipped = 0;
+
+    if (data.mappings) {
+      for (const m of data.mappings) {
+        const info = insertMapping.run(
+          m.source_type,
+          m.source_id,
+          m.source_ref,
+          m.target_type,
+          m.target_id,
+          m.target_ref,
+          m.relationship,
+          m.notes || null
+        );
+        if (info.changes > 0) {
+          inserted++;
+        } else {
+          skipped++;
+        }
+      }
+    }
+
+    return { inserted, skipped };
+  });
+
+  const result = loadAll();
+  console.log(`✓ Loaded ${result.inserted} cross-framework mappings (${result.skipped} duplicates skipped)`);
+}
+
 function buildDatabase() {
   console.log('Building automotive cybersecurity database...');
 
@@ -768,6 +817,7 @@ function buildDatabase() {
     loadAttackPatterns(db);
     loadTaraExamples(db);
     loadCsmsObligations(db);
+    loadCrossMappings(db);
 
     // Insert db_metadata
     const pkgPath = join(__dirname, '..', 'package.json');

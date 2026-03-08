@@ -13,6 +13,7 @@ const __dirname = dirname(__filename);
 
 const DB_PATH = join(__dirname, '..', 'data', 'automotive.db');
 const STANDARDS_SEED_PATH = join(__dirname, '..', 'data', 'seed', 'standards.json');
+const CROSS_MAPPINGS_SEED_PATH = join(__dirname, '..', 'data', 'seed', 'cross-mappings.json');
 const standardsSeed = JSON.parse(readFileSync(STANDARDS_SEED_PATH, 'utf-8')) as {
   standards: unknown[];
   clauses: Array<{
@@ -27,6 +28,19 @@ const standardsSeed = JSON.parse(readFileSync(STANDARDS_SEED_PATH, 'utf-8')) as 
     }>;
   }>;
 };
+const crossMappingsSeed = existsSync(CROSS_MAPPINGS_SEED_PATH)
+  ? JSON.parse(readFileSync(CROSS_MAPPINGS_SEED_PATH, 'utf-8')) as {
+      mappings: Array<{
+        source_type: string;
+        source_id: string;
+        source_ref: string;
+        target_type: string;
+        target_id: string;
+        target_ref: string;
+        relationship: string;
+      }>;
+    }
+  : { mappings: [] };
 const expectedStandardCount = standardsSeed.standards.length;
 const expectedClauseCount = standardsSeed.clauses.length;
 const expectedMappingCount = (() => {
@@ -37,21 +51,28 @@ const expectedMappingCount = (() => {
     const sourceRef = clause.clause_id;
     if (!sourceId || !sourceRef) continue;
 
+    // Key matches DB UNIQUE constraint: (source_type, source_id, source_ref, target_type, target_id, target_ref)
     if (Array.isArray(clause.r155_mapping)) {
       for (const targetRef of clause.r155_mapping) {
-        keys.add(`standard|${sourceId}|${sourceRef}|regulation|r155|${targetRef}|satisfies`);
+        keys.add(`standard|${sourceId}|${sourceRef}|regulation|r155|${targetRef}`);
       }
     }
 
     if (Array.isArray(clause.mappings)) {
       for (const mapping of clause.mappings) {
         if (!mapping?.target_type || !mapping?.target_id || !mapping?.target_ref) continue;
-        const rel = mapping.relationship ?? 'related';
         keys.add(
-          `standard|${sourceId}|${sourceRef}|${mapping.target_type}|${mapping.target_id}|${mapping.target_ref}|${rel}`
+          `standard|${sourceId}|${sourceRef}|${mapping.target_type}|${mapping.target_id}|${mapping.target_ref}`
         );
       }
     }
+  }
+
+  // Include cross-mappings (deduplicated by same unique key as DB)
+  for (const m of crossMappingsSeed.mappings) {
+    keys.add(
+      `${m.source_type}|${m.source_id}|${m.source_ref}|${m.target_type}|${m.target_id}|${m.target_ref}`
+    );
   }
 
   return keys.size;
