@@ -217,6 +217,12 @@ export interface SearchAttackPatternsInput {
   limit?: number;
 }
 
+export interface GenerateTaraInput {
+  system_description: string;
+  system_type?: string;
+  include_examples?: boolean;
+}
+
 export interface GetTypeApprovalChecklistInput {
   regulation: string;
   vehicle_category?: string;

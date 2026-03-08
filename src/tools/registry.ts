@@ -20,8 +20,9 @@ import { listWorkProducts } from './workproducts.js';
 import { exportComplianceMatrix } from './export.js';
 import { getArchitecturePattern } from './architecture.js';
 import { searchAttackPatterns } from './attacks.js';
+import { generateTara } from './tara-generator.js';
 import { getAbout, type AboutContext } from './about.js';
-import type { ListSourcesInput, GetRequirementInput, SearchRequirementsInput, ListWorkProductsInput, ExportComplianceMatrixInput, GetArchitecturePatternInput, SearchAttackPatternsInput } from '../types/index.js';
+import type { ListSourcesInput, GetRequirementInput, SearchRequirementsInput, ListWorkProductsInput, ExportComplianceMatrixInput, GetArchitecturePatternInput, SearchAttackPatternsInput, GenerateTaraInput } from '../types/index.js';
 
 /**
  * Tool definition with name, description, input schema, and handler function
@@ -275,6 +276,37 @@ const TOOLS: ToolDefinition[] = [
     handler: (db: InstanceType<typeof Database>, args: unknown) => {
       const input = args as SearchAttackPatternsInput;
       return searchAttackPatterns(db, input);
+    },
+  },
+  {
+    name: 'generate_tara',
+    description:
+      'Generate a structured TARA (Threat Analysis and Risk Assessment) template for a vehicle system. Provide a system description and optionally a system type hint. Returns assets, threat scenarios (matched from the attack pattern library), damage scenarios, risk ratings, and cybersecurity goals. The output is a starting template — not a finished TARA.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        system_description: {
+          type: 'string',
+          description:
+            'Description of the vehicle system to generate a TARA for. Include key components, interfaces, and connectivity (e.g., "Telematics control unit with 4G modem and CAN bus interface").',
+        },
+        system_type: {
+          type: 'string',
+          description:
+            'Optional system type hint. If this matches a known TARA example suffix (e.g., "tcu", "gateway", "ota-client"), the worked example is used as a base template.',
+        },
+        include_examples: {
+          type: 'boolean',
+          default: true,
+          description:
+            'Include matching worked examples from the TARA example library. Default: true.',
+        },
+      },
+      required: ['system_description'],
+    },
+    handler: (db: InstanceType<typeof Database>, args: unknown) => {
+      const input = args as GenerateTaraInput;
+      return generateTara(db, input);
     },
   },
 ];
