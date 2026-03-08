@@ -544,6 +544,52 @@ function loadStandards(db: Database.Database): void {
   console.log(`✓ Loaded ${result.mappingCount} cross-framework mappings`);
 }
 
+/**
+ * Load architecture reference patterns from seed JSON file
+ */
+function loadArchitecturePatterns(db: Database.Database): void {
+  const seedPath = join(SEED_DIR, 'architecture-patterns.json');
+
+  if (!existsSync(seedPath)) {
+    console.log('⚠ No architecture-patterns.json found, skipping...');
+    return;
+  }
+
+  const data = JSON.parse(readFileSync(seedPath, 'utf-8'));
+
+  const insertPattern = db.prepare(`
+    INSERT INTO architecture_patterns (id, name, domain, description, components, trust_boundaries, applicable_standards, threat_mitigations, guidance, diagram_ascii)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const loadAll = db.transaction(() => {
+    let count = 0;
+
+    if (data.patterns) {
+      for (const p of data.patterns) {
+        insertPattern.run(
+          p.id,
+          p.name,
+          p.domain,
+          p.description,
+          JSON.stringify(p.components),
+          JSON.stringify(p.trust_boundaries),
+          JSON.stringify(p.applicable_standards),
+          JSON.stringify(p.threat_mitigations),
+          p.guidance,
+          p.diagram_ascii || null
+        );
+        count++;
+      }
+    }
+
+    return { count };
+  });
+
+  const result = loadAll();
+  console.log(`✓ Loaded ${result.count} architecture patterns`);
+}
+
 function buildDatabase() {
   console.log('Building automotive cybersecurity database...');
 
@@ -581,6 +627,7 @@ function buildDatabase() {
     console.log('\nLoading seed data...');
     loadRegulations(db);
     loadStandards(db);
+    loadArchitecturePatterns(db);
 
     // Insert db_metadata
     const pkgPath = join(__dirname, '..', 'package.json');
