@@ -228,6 +228,12 @@ export interface GetTypeApprovalChecklistInput {
   vehicle_category?: string;
 }
 
+export interface MapCompliancePathInput {
+  regulation: string;
+  requirement_ref?: string;
+  depth?: 'summary' | 'full';
+}
+
 // ============================================================================
 // Tool Output Types
 // ============================================================================

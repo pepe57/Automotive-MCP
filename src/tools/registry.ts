@@ -21,8 +21,9 @@ import { exportComplianceMatrix } from './export.js';
 import { getArchitecturePattern } from './architecture.js';
 import { searchAttackPatterns } from './attacks.js';
 import { generateTara } from './tara-generator.js';
+import { mapCompliancePath } from './compliance-path.js';
 import { getAbout, type AboutContext } from './about.js';
-import type { ListSourcesInput, GetRequirementInput, SearchRequirementsInput, ListWorkProductsInput, ExportComplianceMatrixInput, GetArchitecturePatternInput, SearchAttackPatternsInput, GenerateTaraInput } from '../types/index.js';
+import type { ListSourcesInput, GetRequirementInput, SearchRequirementsInput, ListWorkProductsInput, ExportComplianceMatrixInput, GetArchitecturePatternInput, SearchAttackPatternsInput, GenerateTaraInput, MapCompliancePathInput } from '../types/index.js';
 
 /**
  * Tool definition with name, description, input schema, and handler function
@@ -307,6 +308,38 @@ const TOOLS: ToolDefinition[] = [
     handler: (db: InstanceType<typeof Database>, args: unknown) => {
       const input = args as GenerateTaraInput;
       return generateTara(db, input);
+    },
+  },
+  {
+    name: 'map_compliance_path',
+    description:
+      'Trace a regulation requirement through to implementation. Given a regulation and optionally a specific paragraph, returns the full compliance path: regulation requirement → ISO 21434 clause → work products → AUTOSAR/UDS implementation → architecture patterns. Use for audit preparation, gap analysis, or understanding what implementing a specific requirement actually involves.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        regulation: {
+          type: 'string',
+          description:
+            'Regulation ID (e.g., "r155", "r156"). Use list_sources to see available regulations.',
+        },
+        requirement_ref: {
+          type: 'string',
+          description:
+            'Specific requirement reference (e.g., "7.2.2.2(g)"). Omit to return paths for all paragraphs in the regulation, grouped by article.',
+        },
+        depth: {
+          type: 'string',
+          enum: ['summary', 'full'],
+          default: 'summary',
+          description:
+            'Level of detail. "summary" returns one line per mapping node. "full" includes guidance text at each node. Default: "summary".',
+        },
+      },
+      required: ['regulation'],
+    },
+    handler: (db: InstanceType<typeof Database>, args: unknown) => {
+      const input = args as MapCompliancePathInput;
+      return mapCompliancePath(db, input);
     },
   },
 ];
