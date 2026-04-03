@@ -90,6 +90,8 @@ CREATE TABLE IF NOT EXISTS standard_clauses (
   clause_id TEXT NOT NULL,
   title TEXT NOT NULL,
   guidance TEXT NOT NULL,
+  normative_text TEXT,
+  reference_tables TEXT,
   work_products TEXT,
   cal_relevant INTEGER DEFAULT 0,
   UNIQUE(standard, clause_id)
@@ -101,26 +103,27 @@ CREATE VIRTUAL TABLE IF NOT EXISTS standard_clauses_fts USING fts5(
   clause_id,
   title,
   guidance,
+  normative_text,
   content='standard_clauses',
   content_rowid='id'
 );
 
 -- FTS5 triggers for standard_clauses
 CREATE TRIGGER IF NOT EXISTS standard_clauses_ai AFTER INSERT ON standard_clauses BEGIN
-  INSERT INTO standard_clauses_fts(rowid, standard, clause_id, title, guidance)
-  VALUES (new.id, new.standard, new.clause_id, new.title, new.guidance);
+  INSERT INTO standard_clauses_fts(rowid, standard, clause_id, title, guidance, normative_text)
+  VALUES (new.id, new.standard, new.clause_id, new.title, new.guidance, new.normative_text);
 END;
 
 CREATE TRIGGER IF NOT EXISTS standard_clauses_ad AFTER DELETE ON standard_clauses BEGIN
-  INSERT INTO standard_clauses_fts(standard_clauses_fts, rowid, standard, clause_id, title, guidance)
-  VALUES('delete', old.id, old.standard, old.clause_id, old.title, old.guidance);
+  INSERT INTO standard_clauses_fts(standard_clauses_fts, rowid, standard, clause_id, title, guidance, normative_text)
+  VALUES('delete', old.id, old.standard, old.clause_id, old.title, old.guidance, old.normative_text);
 END;
 
 CREATE TRIGGER IF NOT EXISTS standard_clauses_au AFTER UPDATE ON standard_clauses BEGIN
-  INSERT INTO standard_clauses_fts(standard_clauses_fts, rowid, standard, clause_id, title, guidance)
-  VALUES('delete', old.id, old.standard, old.clause_id, old.title, old.guidance);
-  INSERT INTO standard_clauses_fts(rowid, standard, clause_id, title, guidance)
-  VALUES (new.id, new.standard, new.clause_id, new.title, new.guidance);
+  INSERT INTO standard_clauses_fts(standard_clauses_fts, rowid, standard, clause_id, title, guidance, normative_text)
+  VALUES('delete', old.id, old.standard, old.clause_id, old.title, old.guidance, old.normative_text);
+  INSERT INTO standard_clauses_fts(rowid, standard, clause_id, title, guidance, normative_text)
+  VALUES (new.id, new.standard, new.clause_id, new.title, new.guidance, new.normative_text);
 END;
 
 CREATE TABLE IF NOT EXISTS work_products (
@@ -436,8 +439,8 @@ function loadStandards(db: Database.Database): void {
   `);
 
   const insertClause = db.prepare(`
-    INSERT INTO standard_clauses (standard, clause_id, title, guidance, work_products, cal_relevant)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO standard_clauses (standard, clause_id, title, guidance, normative_text, reference_tables, work_products, cal_relevant)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertMapping = db.prepare(`
@@ -473,6 +476,8 @@ function loadStandards(db: Database.Database): void {
           clause.clause_id,
           clause.title,
           clause.guidance,
+          clause.normative_text || null,
+          clause.reference_tables ? JSON.stringify(clause.reference_tables) : null,
           clause.work_products ? JSON.stringify(clause.work_products) : null,
           clause.cal_relevant || 0
         );
