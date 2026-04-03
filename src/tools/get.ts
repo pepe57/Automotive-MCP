@@ -74,6 +74,8 @@ export function getRequirement(db: InstanceType<typeof Database>, input: GetRequ
           clause_id,
           title,
           guidance,
+          normative_text,
+          reference_tables,
           work_products
         FROM standard_clauses
         WHERE standard = ? AND clause_id = ?
@@ -82,6 +84,8 @@ export function getRequirement(db: InstanceType<typeof Database>, input: GetRequ
         clause_id: string;
         title: string;
         guidance: string;
+        normative_text: string | null;
+        reference_tables: string | null;
         work_products: string | null;
       } | undefined;
 
@@ -102,13 +106,23 @@ export function getRequirement(db: InstanceType<typeof Database>, input: GetRequ
         }
       }
 
+      // Parse reference_tables JSON if present
+      let referenceTables: Record<string, unknown>[] | undefined = undefined;
+      if (row.reference_tables) {
+        try {
+          const parsed = JSON.parse(row.reference_tables);
+          if (Array.isArray(parsed)) referenceTables = parsed;
+        } catch { /* Invalid JSON, leave undefined */ }
+      }
+
       result = {
         source: row.standard,
         reference: row.clause_id,
         title: row.title,
-        text: null, // Standards don't include full text (paid license required)
+        text: row.normative_text ?? null,
         guidance: row.guidance,
-        ...(workProducts && { work_products: workProducts })
+        ...(workProducts && { work_products: workProducts }),
+        ...(referenceTables && { reference_tables: referenceTables }),
       };
     }
 
