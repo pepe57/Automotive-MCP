@@ -1,5 +1,6 @@
 import type Database from '@ansvar/mcp-sqlite';
 import type { GetRequirementInput, GetRequirementOutput, MappingReference } from '../types/index.js';
+import { buildCitation } from '../utils/citation.js';
 
 /**
  * Retrieve a specific regulation article or standard clause with full details.
@@ -181,6 +182,17 @@ export function getRequirement(db: InstanceType<typeof Database>, input: GetRequ
         }));
       }
     }
+
+    // Attach citation metadata for the deterministic citation pipeline
+    const displayText = result.title
+      ? `${result.source.toUpperCase()} ${result.reference} — ${result.title}`
+      : `${result.source.toUpperCase()} ${result.reference}`;
+    (result as any)._citation = buildCitation(
+      `${result.source.toUpperCase()} ${result.reference}`,
+      displayText,
+      'get_requirement',
+      { source: rawSource, reference },
+    );
 
     return result;
   } catch (error) {
